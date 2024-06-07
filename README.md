@@ -11,4 +11,4 @@ We demonstrate the usefulness of our method on calcium fluorescence trace data f
 
 # **Cite this work**
 
-Time-varying l0 optimization for spike inference from multi-trial calcium recordings.
+Time-varying $\ell_0$ optimization for spike inference from multi-trial calcium recordings.
