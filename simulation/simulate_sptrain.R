@@ -98,19 +98,28 @@ simulate.GP <- function(n,p, gam, sd, lam_star,rate_func){
 
 
 ###use bump functions as firing rate--------------------
-get.bump <- function(width){
-  y = exp(-width^2/(width^2-(x-width)^2))
-  return(y)
-}
+# get.bump <- function(width){
+#   y = exp(-width^2/(width^2-(x-width)^2))
+#   return(y)
+# }
 
+## create bump in firing rate function
+# 50Hz
+# x = 1-1000 => t = 1/50, 2/50, ..., 1000/50
+# d = 1
 get.bump1 <- function(x, h0){
-  exp(-abs(x-h0)^2/150^2)
+  exp(-abs(x-h0)^2/50^2)
 }
 
-inv.sigmoid <- function(x){
-  log(x/(1-x))
-}
+# inv.sigmoid <- function(x){
+#   log(x/(1-x))
+# }
 
+### Appendix B Algorithm:
+### Simulate spike trains from an Inhomogeneous Poisson Process
+# V: number of timesteps
+# lam_star: upper bound of rate intensity
+# bump: the locations where the peaks of firing rate occur
 simulate.bump <- function(V, lam_star, bump = bump){
   lam_s = rep(0.05, V)
   for(i in 1:length(bump)){
@@ -127,8 +136,13 @@ simulate.bump <- function(V, lam_star, bump = bump){
 }
 
 
-
 ###generate simulation data under static firing rate
+# n: number of timesteps
+# p: number of trials
+# gam: decay rate
+# sd: standard deviation of the random noise
+# lam_star: upper bound of rate intensity
+# bump: the locations where the peaks of firing rate occur
 simulate.BP <- function(n,p, gam, sd, lam_star, bump){
   c = matrix(0,p,n)
   y = matrix(0,p,n)
@@ -147,33 +161,52 @@ simulate.BP <- function(n,p, gam, sd, lam_star, bump){
   }
   y = c + eps
   true_fr = simulate.bump(V = n, lam_star = lam_star,  bump = bump)$lam_s
+  # y: observed fluorescence trace
+  # c: underlying calcium concentration
+  # true_cp: true spike locations (a vector of index)
+  # true_st: true spike locations (a binary matrix)
+  # true_fr: true firing rate
   return(list(y = y, c = c, true_cp = cp, true_st = s,true_fr=true_fr))
 }
 
+#--------------------------
+# Simulation example
+#--------------------------
+# set.seed(1234)
+# sim = simulate.BP(n = 1000, p = 50, gam = 0.96, sd = 0.3,
+#                   lam_star = 0.2, bump = c(300, 700))
+# i = 3
+# marker_times = sim$true_cp[[i]]/50
+# marker_height = -1
+# plot((1:1000)/50, sim$y[i,], 'l', ylim = c(-1,8))
+# abline(v = c(6, 14))
+# segments(x0 = marker_times, y0 = rep(marker_height, length(marker_times)),
+#          x1 = marker_times, y1 = rep(marker_height + 0.5, length(marker_times)),
+#          col = "blue", lwd = 0.5)
 
 
 ##generate simulation data with intercept
-simulate.BP.inter <- function(n,p, gam, sd, lam_star, bump,beta0=0){
-  c = matrix(0,p,n)
-  y = matrix(0,p,n)
-  s = matrix(0,p,n)
-  #beta0 = 1
-  eps = matrix(rnorm(p*n,0,sd),p,n)
-  cp = NULL
-  for(p0 in 1:p){
-    true_cp = simulate.bump(V = n, lam_star = lam_star,  bump = bump)$eps_set
-    s[p0, true_cp] = 1
-    s[p0, 1] = 0
-    cp[[p0]] = true_cp
-    for(i in 1:n){
-      if (i > 1) c[p0,i] = gam * c[p0,(i-1)] + s[p0,i]
-      else c[p0,i] = c[p0,i] + s[p0,i]
-    }
-  }
-  y = c + eps + beta0
-  true_fr = simulate.bump(V = n, lam_star = lam_star,  bump = bump)$lam_s
-  return(list(y = y, c = c, true_cp = cp, true_st = s,true_fr=true_fr))
-}
+# simulate.BP.inter <- function(n,p, gam, sd, lam_star, bump,beta0=0){
+#   c = matrix(0,p,n)
+#   y = matrix(0,p,n)
+#   s = matrix(0,p,n)
+#   #beta0 = 1
+#   eps = matrix(rnorm(p*n,0,sd),p,n)
+#   cp = NULL
+#   for(p0 in 1:p){
+#     true_cp = simulate.bump(V = n, lam_star = lam_star,  bump = bump)$eps_set
+#     s[p0, true_cp] = 1
+#     s[p0, 1] = 0
+#     cp[[p0]] = true_cp
+#     for(i in 1:n){
+#       if (i > 1) c[p0,i] = gam * c[p0,(i-1)] + s[p0,i]
+#       else c[p0,i] = c[p0,i] + s[p0,i]
+#     }
+#   }
+#   y = c + eps + beta0
+#   true_fr = simulate.bump(V = n, lam_star = lam_star,  bump = bump)$lam_s
+#   return(list(y = y, c = c, true_cp = cp, true_st = s,true_fr=true_fr))
+# }
 
 
 
