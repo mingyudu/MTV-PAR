@@ -53,48 +53,48 @@ draw_samples <- function(x, N,  kernel_fn, ...) {
 
 
 ##sample from SCGP
-simulate.SGCP <- function(n, lam_star, rate_func = rate_fnunc){
-  #set.seed(1)
-  gs <- rate_func(1:n)
-  #gs <- c(rep(0.1,n/2),rep(10,n/2))
-  #gs <- draw_samples(1, 1, kernel_fn = kernel, length = n/10)
-  lam_s = sigmoid(gs)
-  #lam_s = c(rep(0.1,n/2), rep(1,n/2))
-  J = rpois(1, n*lam_star)
-  sj_set = sort(c(sample.int(n, J, replace = FALSE)))
-  eps_set = NULL
-  for(j in 1:J){
-    #set.seed(j)
-    rj = runif(1)
-    if(rj < lam_s[sj_set[j]]) eps_set = c(eps_set, sj_set[j])
-  }
-  return(list(eps_set = eps_set, sj_set = sj_set))
-}
+# simulate.SGCP <- function(n, lam_star, rate_func = rate_fnunc){
+#   #set.seed(1)
+#   gs <- rate_func(1:n)
+#   #gs <- c(rep(0.1,n/2),rep(10,n/2))
+#   #gs <- draw_samples(1, 1, kernel_fn = kernel, length = n/10)
+#   lam_s = sigmoid(gs)
+#   #lam_s = c(rep(0.1,n/2), rep(1,n/2))
+#   J = rpois(1, n*lam_star)
+#   sj_set = sort(c(sample.int(n, J, replace = FALSE)))
+#   eps_set = NULL
+#   for(j in 1:J){
+#     #set.seed(j)
+#     rj = runif(1)
+#     if(rj < lam_s[sj_set[j]]) eps_set = c(eps_set, sj_set[j])
+#   }
+#   return(list(eps_set = eps_set, sj_set = sj_set))
+# }
 
 ##generate simulation data using gaussian kernel function
-simulate.GP <- function(n,p, gam, sd, lam_star,rate_func){
-  c = matrix(0,p,n)
-  y = matrix(0,p,n)
-  s = matrix(0,p,n)
-  eps = matrix(rnorm(p*n,0,sd),p,n)
-  cp = NULL
-  for(p0 in 1:p){
-    #set.seed(p0)
-    #eps = rnorm(n,0,sd)
-    true_cp = simulate.SGCP(n = n, lam_star = lam_star, rate_func = rate_func)$eps_set
-    s[p0, true_cp] = 1
-    s[p0, 1] = 0
-    cp[[p0]] = true_cp
-    for(i in 1:n){
-      if (i > 1) c[p0,i] = gam * c[p0,(i-1)] + s[p0,i]
-      else c[p0,i] = c[p0,i] + s[p0,i]
-      #y[p0,i] = c[p0,i]
-      #f[,i] = c[,i]
-    }
-  }
-  y = c + eps
-  return(list(y = y, c = c, true_cp = cp, true_st = s))
-}
+# simulate.GP <- function(n,p, gam, sd, lam_star,rate_func){
+#   c = matrix(0,p,n)
+#   y = matrix(0,p,n)
+#   s = matrix(0,p,n)
+#   eps = matrix(rnorm(p*n,0,sd),p,n)
+#   cp = NULL
+#   for(p0 in 1:p){
+#     #set.seed(p0)
+#     #eps = rnorm(n,0,sd)
+#     true_cp = simulate.SGCP(n = n, lam_star = lam_star, rate_func = rate_func)$eps_set
+#     s[p0, true_cp] = 1
+#     s[p0, 1] = 0
+#     cp[[p0]] = true_cp
+#     for(i in 1:n){
+#       if (i > 1) c[p0,i] = gam * c[p0,(i-1)] + s[p0,i]
+#       else c[p0,i] = c[p0,i] + s[p0,i]
+#       #y[p0,i] = c[p0,i]
+#       #f[,i] = c[,i]
+#     }
+#   }
+#   y = c + eps
+#   return(list(y = y, c = c, true_cp = cp, true_st = s))
+# }
 
 
 ###use bump functions as firing rate--------------------
