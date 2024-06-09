@@ -3,53 +3,53 @@
 library(MASS)
 #source('sample_fromGP.R')
 #sigmoid function
-sigmoid <- function(z){
-  (1 + exp(-z))^(-1)
-}
+# sigmoid <- function(z){
+#   (1 + exp(-z))^(-1)
+# }
 
 # generate covariance matrix for points in `x` using given kernel function
-cov_matrix <- function(x, kernel_fn, ...) {
-  outer(x, x, function(a, b) kernel_fn(a, b, ...))
-}
+# cov_matrix <- function(x, kernel_fn, ...) {
+#   outer(x, x, function(a, b) kernel_fn(a, b, ...))
+# }
 
 
-se_kernel <- function(x, y, sigma = 1, length = 1) {
-  sigma^2 * exp(- (x - y)^2 / (2 * length^2))
-}
+# se_kernel <- function(x, y, sigma = 1, length = 1) {
+#   sigma^2 * exp(- (x - y)^2 / (2 * length^2))
+# }
 
-period_kernel <- function(x, y, p = 100, sigma = 1, length = 1) {
-  sigma^2 * exp(-2 * sin(pi * abs(x - y) / p)^2 / length^2)
-}
+# period_kernel <- function(x, y, p = 100, sigma = 1, length = 1) {
+#   sigma^2 * exp(-2 * sin(pi * abs(x - y) / p)^2 / length^2)
+# }
 
-rq_kernel <- function(x, y, alpha = 1, sigma = 1, length = 1) {
-  sigma^2 * (1 + (x - y)^2 / (2 * alpha * length^2))^(-alpha)
-}
+# rq_kernel <- function(x, y, alpha = 1, sigma = 1, length = 1) {
+#   sigma^2 * (1 + (x - y)^2 / (2 * alpha * length^2))^(-alpha)
+# }
 
 
-matern_kernel <- function(x, y, nu = 1.5, sigma = 1, l = 1) {
-  if (!(nu %in% c(0.5, 1.5, 2.5))) {
-    stop("p must be equal to 0.5, 1.5 or 2.5")
-  }
-  p <- nu - 0.5
-  d <- abs(x - y)
-  if (p == 0) {
-    sigma^2 * exp(- d / l)
-  } else if (p == 1) {
-    sigma^2 * (1 + sqrt(3)*d/l) * exp(- sqrt(3)*d/l)
-  } else {
-    sigma^2 * (1 + sqrt(5)*d/l + 5*d^2 / (3*l^2)) * exp(-sqrt(5)*d/l)
-  }
-}
+# matern_kernel <- function(x, y, nu = 1.5, sigma = 1, l = 1) {
+#   if (!(nu %in% c(0.5, 1.5, 2.5))) {
+#     stop("p must be equal to 0.5, 1.5 or 2.5")
+#   }
+#   p <- nu - 0.5
+#   d <- abs(x - y)
+#   if (p == 0) {
+#     sigma^2 * exp(- d / l)
+#   } else if (p == 1) {
+#     sigma^2 * (1 + sqrt(3)*d/l) * exp(- sqrt(3)*d/l)
+#   } else {
+#     sigma^2 * (1 + sqrt(5)*d/l + 5*d^2 / (3*l^2)) * exp(-sqrt(5)*d/l)
+#   }
+# }
 
-draw_samples <- function(x, N,  kernel_fn, ...) {
-  Y <- matrix(NA, nrow = length(x), ncol = N)
-  #set.seed(seed)
-  for (n in 1:N) {
-    K <- cov_matrix(x, kernel_fn, ...)
-    Y[, n] <- mvrnorm(1, mu = rep(0, times = length(x)), Sigma = K)
-  }
-  Y
-}
+# draw_samples <- function(x, N,  kernel_fn, ...) {
+#   Y <- matrix(NA, nrow = length(x), ncol = N)
+#   #set.seed(seed)
+#   for (n in 1:N) {
+#     K <- cov_matrix(x, kernel_fn, ...)
+#     Y[, n] <- mvrnorm(1, mu = rep(0, times = length(x)), Sigma = K)
+#   }
+#   Y
+# }
 
 
 ##sample from SCGP
