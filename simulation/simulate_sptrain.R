@@ -1,6 +1,6 @@
 
 ##reference: https://www.r-bloggers.com/sampling-paths-from-a-gaussian-process/
-library(MASS)
+# library(MASS)
 #source('sample_fromGP.R')
 #sigmoid function
 # sigmoid <- function(z){
@@ -175,6 +175,7 @@ simulate.BP <- function(n,p, gam, sd, lam_star, bump){
 # set.seed(1234)
 # sim = simulate.BP(n = 1000, p = 50, gam = 0.96, sd = 0.3,
 #                   lam_star = 0.2, bump = c(300, 700))
+## observed fluorescence trace and the underlying spike occurrence
 # i = 3
 # marker_times = sim$true_cp[[i]]/50
 # marker_height = -1
@@ -183,7 +184,10 @@ simulate.BP <- function(n,p, gam, sd, lam_star, bump){
 # segments(x0 = marker_times, y0 = rep(marker_height, length(marker_times)),
 #          x1 = marker_times, y1 = rep(marker_height + 0.5, length(marker_times)),
 #          col = "blue", lwd = 0.5)
-
+## true firing rate
+# obj = simulate.bump(V = 1000, lam_star = 0.2, bump = c(300, 700))
+# true_fr = obj$lam_s*10
+# plot((1:1000)/50, true_fr, 'l')
 
 ##generate simulation data with intercept
 # simulate.BP.inter <- function(n,p, gam, sd, lam_star, bump,beta0=0){

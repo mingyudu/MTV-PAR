@@ -9,7 +9,7 @@ require(doParallel)
 #require(fields)
 #require(Kendall)
 
-cores <- parallel::detectCores()
+cores <- parallel::detectCores()-20
 cl <- makeSOCKcluster(cores)
 registerDoSNOW(cl)
 #mydata <- matrix(rnorm(8000*500), ncol=500)
@@ -30,7 +30,7 @@ result <-
     p = 50
     #n_set: length of series; gam_set: gamma value
     #sd_set: standard deviation; pois_set: poisson intensity
-    n_set=c(1000);gam_set=0.96;sd_set=0.15;pois_set = c(0.2); 
+    n_set=c(1000);gam_set=0.96;sd_set=0.3;pois_set = c(0.2); 
     #lam_set" lambda values
     #lam_set = c(0.04,0.05,0.1,0.3,1,2,3)
     #lam_set = c(0.15,0.2,0.3,0.5,1,2)
@@ -49,9 +49,9 @@ result <-
     fr.rst = array(data = NA, dim = dims)
     cp.sum = array(data = NA, dim = dims)
     
-    rate_func <- function(x){
-      draw_samples(x, N=1,  kernel_fn = se_kernel, length = max(x)/10)
-    }
+    # rate_func <- function(x){
+    #   draw_samples(x, N=1,  kernel_fn = se_kernel, length = max(x)/10)
+    # }
     
     
     ###run simulation
