@@ -137,6 +137,126 @@ save.image("./result/static_sim_pruned.RData")
 
 
 
+### Make plots
+setwd('/home/exx/Desktop/MTV-PAR/simulation/')
+load('result/static_sim_pruned.RData')
+lam_set = c(0.2, 0.3, 0.4, 0.5, 0.75, 1.0)
+bseed = 100
+P=50
+T=1000
+# vp distance
+vp1 = array(NA, dim = c(bseed, length(lam_set)))
+vp2 = array(NA, dim = c(bseed, length(lam_set)))
+vp3 = array(NA, dim = c(bseed, length(lam_set)))
+# L2-norm distance
+fr1 = array(NA, dim = c(bseed, length(lam_set)))
+fr2 = array(NA, dim = c(bseed, length(lam_set)))
+fr3 = array(NA, dim = c(bseed, length(lam_set)))
+# bandwidth
+win1 = array(NA, dim = c(bseed, length(lam_set)))
+# estimated firing rate
+frr1 = array(NA, dim = c(bseed, T))
+frr2 = array(NA, dim = c(bseed, T))
+frr3 = array(NA, dim = c(bseed, T))
+
+for (i in 1:bseed) {
+  vp1[i,] = result[[i]]$unif_vp
+  vp2[i,] = result[[i]]$tv_singletrial_vp
+  vp3[i,] = result[[i]]$tv_vp
+  fr1[i,] = result[[i]]$unif_fr2
+  fr2[i,] = result[[i]]$tv_singletrial_fr2
+  fr3[i,] = result[[i]]$tv_fr2
+  win1[i,] = result[[i]]$win_len
+  frr1[i,] = result[[i]]$unif_fr[2,]
+  frr2[i,] = result[[i]]$tv_singletrial_fr[2,]
+  frr3[i,] = result[[i]]$tv_fr[2,]
+}
+
+vp1 = vp1/P
+vp2 = vp2/P
+vp3 = vp3/P
+fr1 = fr1/P
+fr2 = fr2/P
+fr3 = fr3/P
+win1 = 2*win1
+
+colMeans(vp1)
+colMeans(vp2)
+colMeans(vp3)
+
+colMeans(fr1)
+colMeans(fr2)
+colMeans(fr3)
+
+colMeans(win1)
+
+library(ggplot2)
+library(latex2exp)
+library(gridExtra)
+
+vp.data=data.frame(
+  lambda=as.factor(c(rep(lam_set, each=bseed), rep(lam_set, each=bseed), rep(lam_set, each=bseed))),
+  VP=c(c(vp1), c(vp2), c(vp3)),
+  methods=c(rep("constant", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
+)
+plot1=ggplot(vp.data, aes(x=lambda, y=VP, fill=methods)) + geom_boxplot(width=0.3) + 
+  ggtitle("VP distance")+xlab(TeX("$\\lambda$"))+ylab("VP")+
+  stat_summary(
+    fun = median,
+    geom = 'line',
+    aes(group = methods, colour = methods),
+    position = position_dodge(width = 0.3) #this has to be added
+  )
+plot1
+
+fr2.data=data.frame(
+  lambda=as.factor(c(rep(lam_set, each=bseed), rep(lam_set, each=bseed), rep(lam_set, each=bseed))),
+  MSE=c(c(fr1), c(fr2), c(fr3)),
+  methods=c(rep("constant", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
+)
+
+plot2=ggplot(fr2.data, aes(x=lambda, y=MSE, fill=methods, main="L2 Norm")) + 
+  ggtitle("L2 Norm") + xlab(TeX("$\\lambda$"))+ylab("L2 Norm")+
+  geom_boxplot(width=0.3) + 
+  stat_summary(
+    fun = median,
+    geom = 'line',
+    aes(group = methods, colour = methods),
+    position = position_dodge(width = 0.3) #this has to be added
+  )
+plot2
+
+win.data = data.frame(
+  lambda=as.factor(c(rep(lam_set, each=bseed))),
+  win=c(c(win1)),
+  methods=c(rep("constant", bseed*length(lam_set)))
+)
+
+plot3=ggplot(win.data, aes(x=lambda, y=win, fill=methods, main="Bandwidth")) + 
+  ggtitle("Bandwidth") + xlab(TeX("$\\lambda$"))+ylab("Bandwidth")+
+  geom_boxplot(width=0.3) + 
+  stat_summary(
+    fun = median,
+    geom = 'line',
+    aes(group = methods, colour = methods),
+    position = position_dodge(width = 0.3) #this has to be added
+  ) + 
+  theme(legend.position = "none")
+plot3
+
+png("static-sim-bw.png")
+grid.arrange(plot1, plot2, plot3, ncol=1, nrow=3)
+dev.off()
+
+png("bw-selection-fr8.png")
+plot(result[[1]]$true_fr, type="l", xlab="Time Point", ylab="Firing Rate")
+lines(colMeans(frr1), col=2)
+lines(colMeans(frr2), col=3)
+lines(colMeans(frr3), col=4)
+legend("topleft", col = c(1:4), legend = c("true","constant","tv-1","tv-all"), 
+       lty = c(1,1,1,1), text.col=1:4, bty = 'n', cex = 0.6)
+dev.off()
+
 
 
 
