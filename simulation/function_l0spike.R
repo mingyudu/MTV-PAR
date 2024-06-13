@@ -25,126 +25,126 @@ Dy<- function(Y,gam){
 
 #function of detecting spikes using constant penalty
 #algorithm2 in Jewell and Witten (2018)
-estspike2 <- function(dat, gam, lam, trial){
-  ##input: decay parameter gamma(gam), penalty term lambda(lam), the trial of data (dat,trial)
-  ##initialize the change point sets
-  Y = dat[trial, ]
-  Fset = c((-1)*lam, rep(0,length(Y)))
-  cp = list()
-  cp[[1]] = 0
-  n = length(Y)
-  eps_s = 1
-  
-  pen = lam
-  
-  for (i in 2:(n+1)){
-    #print(i)
-    Fmin = Fset[1] + Dy(Y[1:(i-1)],gam) + pen
-    sprime = i-1
-    eps_s = c(eps_s,(i-1))
-    for (j in 1:(length(eps_s)-1)){
-      Fset.temp = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam) + pen
-      if(Fset.temp <= Fmin) {Fmin = Fset.temp; sprime = eps_s[j]}
-    }
-    
-    ex_idx = NULL
-    for (j in 1:(length(eps_s)-1)){
-      F_tau = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam)
-      if(F_tau >= Fmin) ex_idx = c(ex_idx, j)
-    }
-    if(length(ex_idx)>0) eps_s = eps_s[-ex_idx]
-    
-    Fset[i] = Fmin
-    cp[[i]] = unique(c(cp[[sprime]], sprime-1))
-  }
-  
-  cpset = cp[[n+1]]
-  
-  ##estimate calcium concentration ct
-  if(length(cpset) <= 1){
-    ct = Y
-    cpset = NULL
-  }
-  else{
-    cpset = cpset[2:length(cpset)]
-    ct = rep(0, length(Y))
-    for(i in 1:length(cpset)){
-      if(i == length(cpset)){
-        ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):length(Y)], gam)
-        ct[(cpset[i]+2):length(Y)] = ct[cpset[i]+1]*(gam^seq(1,length(Y)-cpset[i]-1))
-      }
-      else{
-      ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):cpset[i+1]], gam)
-      ct[(cpset[i]+2):cpset[i+1]] = ct[cpset[i]+1]*(gam^seq(1,cpset[i+1]-cpset[i]-1))
-      }
-    }
-    cpset = cpset+1
-  }
-  #use thresholded estimate of spike
-  st = ct[2:n] - gam*ct[1:(n-1)]
-  st = c(0,st)
-  #cpset = cpset[st[cpset]>L]
-  return(list(cp = cpset, ct = ct, st = st))
-}
+# estspike2 <- function(dat, gam, lam, trial){
+#   ##input: decay parameter gamma(gam), penalty term lambda(lam), the trial of data (dat,trial)
+#   ##initialize the change point sets
+#   Y = dat[trial, ]
+#   Fset = c((-1)*lam, rep(0,length(Y)))
+#   cp = list()
+#   cp[[1]] = 0
+#   n = length(Y)
+#   eps_s = 1
+#   
+#   pen = lam
+#   
+#   for (i in 2:(n+1)){
+#     #print(i)
+#     Fmin = Fset[1] + Dy(Y[1:(i-1)],gam) + pen
+#     sprime = i-1
+#     eps_s = c(eps_s,(i-1))
+#     for (j in 1:(length(eps_s)-1)){
+#       Fset.temp = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam) + pen
+#       if(Fset.temp <= Fmin) {Fmin = Fset.temp; sprime = eps_s[j]}
+#     }
+#     
+#     ex_idx = NULL
+#     for (j in 1:(length(eps_s)-1)){
+#       F_tau = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam)
+#       if(F_tau >= Fmin) ex_idx = c(ex_idx, j)
+#     }
+#     if(length(ex_idx)>0) eps_s = eps_s[-ex_idx]
+#     
+#     Fset[i] = Fmin
+#     cp[[i]] = unique(c(cp[[sprime]], sprime-1))
+#   }
+#   
+#   cpset = cp[[n+1]]
+#   
+#   ##estimate calcium concentration ct
+#   if(length(cpset) <= 1){
+#     ct = Y
+#     cpset = NULL
+#   }
+#   else{
+#     cpset = cpset[2:length(cpset)]
+#     ct = rep(0, length(Y))
+#     for(i in 1:length(cpset)){
+#       if(i == length(cpset)){
+#         ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):length(Y)], gam)
+#         ct[(cpset[i]+2):length(Y)] = ct[cpset[i]+1]*(gam^seq(1,length(Y)-cpset[i]-1))
+#       }
+#       else{
+#       ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):cpset[i+1]], gam)
+#       ct[(cpset[i]+2):cpset[i+1]] = ct[cpset[i]+1]*(gam^seq(1,cpset[i+1]-cpset[i]-1))
+#       }
+#     }
+#     cpset = cpset+1
+#   }
+#   #use thresholded estimate of spike
+#   st = ct[2:n] - gam*ct[1:(n-1)]
+#   st = c(0,st)
+#   #cpset = cpset[st[cpset]>L]
+#   return(list(cp = cpset, ct = ct, st = st))
+# }
 
 ##use auto-covariance function to estimate gamma
 #reference: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4881387/pdf/nihms778164.pdf (equation 3)
-est.gam <- function(Y){
-  #Y = dat[trial,]
-  n = length(Y)
-  auto1 = sum((Y[1:(n-1)]-mean(Y))*(Y[2:n]-mean(Y)))/n
-  auto2 = sum((Y[1:(n-2)]-mean(Y))*(Y[3:n]-mean(Y)))/n
-  return(auto2/auto1)
-}
+# est.gam <- function(Y){
+#   #Y = dat[trial,]
+#   n = length(Y)
+#   auto1 = sum((Y[1:(n-1)]-mean(Y))*(Y[2:n]-mean(Y)))/n
+#   auto2 = sum((Y[1:(n-2)]-mean(Y))*(Y[3:n]-mean(Y)))/n
+#   return(auto2/auto1)
+# }
 
 ##function for cv(choosing lambda)
 #algorithm 3 in Jewell and Witten (2018)
-choose.lam <- function(dat, gam, lamset, trial = trial){
-  Y = dat[trial,]
-  M = length(lamset)
-  n = length(Y)
-  cvMSE = matrix(0,M,2)
-  for(fold in 1:2){
-    if(fold == 1){
-      Y_train = Y[seq(1,length(Y),2)]
-      Y_test = Y[seq(2,length(Y),2)]
-    }
-    else{
-      Y_train = Y[seq(2,length(Y),2)]
-      Y_test = Y[seq(1,length(Y),2)]
-    }
-    for(m in 1:M){
-      #c_train = estspike2(t(Y_train), gam, lamset[m])$ct
-      c_train = estspike.gaussian(t(Y_train), gam, lamset[m], trial = 1, power = power, st_gauss = st_gauss)$ct
-      c_test = (c_train[1:(n/2-1)] + c_train[2:(n/2)])/2
-      #if(fold == 1)
-        {c_test = c(c_test, c_train[n/2])}
-      #else{c_test = c(c_train[1], c_test)}
-      cvMSE[m, fold] = 2/n*sum((Y_test-c_test)^2)
-    }
-  }
-  cv_bar = rowMeans(cvMSE)
-  mhat = which.min(cv_bar)
-  #se_cv = sqrt((cvMSE[,1] - cv_bar)^2/2 + (cvMSE[,2] - cv_bar)^2/2)
-  
-  return(list(lam = lamset[mhat], cv_MSE = cv_bar))
-}
+# choose.lam <- function(dat, gam, lamset, trial = trial){
+#   Y = dat[trial,]
+#   M = length(lamset)
+#   n = length(Y)
+#   cvMSE = matrix(0,M,2)
+#   for(fold in 1:2){
+#     if(fold == 1){
+#       Y_train = Y[seq(1,length(Y),2)]
+#       Y_test = Y[seq(2,length(Y),2)]
+#     }
+#     else{
+#       Y_train = Y[seq(2,length(Y),2)]
+#       Y_test = Y[seq(1,length(Y),2)]
+#     }
+#     for(m in 1:M){
+#       #c_train = estspike2(t(Y_train), gam, lamset[m])$ct
+#       c_train = estspike.gaussian(t(Y_train), gam, lamset[m], trial = 1, power = power, st_gauss = st_gauss)$ct
+#       c_test = (c_train[1:(n/2-1)] + c_train[2:(n/2)])/2
+#       #if(fold == 1)
+#         {c_test = c(c_test, c_train[n/2])}
+#       #else{c_test = c(c_train[1], c_test)}
+#       cvMSE[m, fold] = 2/n*sum((Y_test-c_test)^2)
+#     }
+#   }
+#   cv_bar = rowMeans(cvMSE)
+#   mhat = which.min(cv_bar)
+#   #se_cv = sqrt((cvMSE[,1] - cv_bar)^2/2 + (cvMSE[,2] - cv_bar)^2/2)
+#   
+#   return(list(lam = lamset[mhat], cv_MSE = cv_bar))
+# }
 
 ##simulate homogeneous data with n time points and p trials
-simulate <- function(n,p, gam, poisMean, sd, seed){
-  set.seed(seed = seed)
-  c = matrix(0,p,n)
-  f = matrix(0,p,n)
-  s = rpois(n, poisMean)
-  for(i in 1:n){
-    if (i > 1) c[,i] = gam %*% c[,(i-1)] + matrix(s[i],p,1)
-    else c[,i] = c[,i] + s[i]
-    
-    f[,i] = c[,i] + matrix(rnorm(p,0,sd),p,1)
-    #f[,i] = c[,i]
-  }
-  return(list(f = f, c = c, true_cp = which(s!=0)))
-}
+# simulate <- function(n,p, gam, poisMean, sd, seed){
+#   set.seed(seed = seed)
+#   c = matrix(0,p,n)
+#   f = matrix(0,p,n)
+#   s = rpois(n, poisMean)
+#   for(i in 1:n){
+#     if (i > 1) c[,i] = gam %*% c[,(i-1)] + matrix(s[i],p,1)
+#     else c[,i] = c[,i] + s[i]
+#     
+#     f[,i] = c[,i] + matrix(rnorm(p,0,sd),p,1)
+#     #f[,i] = c[,i]
+#   }
+#   return(list(f = f, c = c, true_cp = which(s!=0)))
+# }
 
 ##calculate the victor-purpura metric
 #reference: http://www-users.med.cornell.edu/~jdvicto/spkdm.html
