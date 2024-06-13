@@ -175,9 +175,9 @@ for (i in 1:bseed) {
 vp1 = vp1/P
 vp2 = vp2/P
 vp3 = vp3/P
-fr1 = fr1/P
-fr2 = fr2/P
-fr3 = fr3/P
+fr1 = sqrt(fr1)
+fr2 = sqrt(fr2)
+fr3 = sqrt(fr3)
 win1 = 2*win1
 
 colMeans(vp1)
