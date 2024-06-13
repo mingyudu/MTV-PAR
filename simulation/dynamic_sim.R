@@ -1,8 +1,10 @@
+setwd('/home/exx/Desktop/MTV-PAR/simulation/')
 require(doSNOW)
 require(doParallel)
 
-cores <- parallel::detectCores()
-cl <- makeSOCKcluster(cores, outfile="")
+# cores <- parallel::detectCores()
+cores <- 20
+cl <- makeSOCKcluster(cores, outfile="./out/dynamic_sim_pruned_output.txt")
 registerDoSNOW(cl)
 
 pb <- txtProgressBar(min=1, max=100, style=3)
@@ -14,8 +16,8 @@ result <-
     library(smoother)
     library(MASS)
     library(zoo)
-    source("function_l0spike.R")
-    source('simulate_sptrain.R')
+    source("/home/exx/Desktop/MTV-PAR/simulation/function_l0spike.R")
+    source('/home/exx/Desktop/MTV-PAR/simulation/simulate_sptrain.R')
     
     #simulation parameters
     P=50 #the number of trials
@@ -34,9 +36,9 @@ result <-
     pow_vec = exp(-(1:P-(P/2))^2/T)
     for(trial in 1:P){
       pow = pow_vec[trial]
-      # obj=simulate.bump2(T, lam_star = max_fr,  bump = bump, pow=pow_vec[trial])
-      obj=simulate.bump2(T, bump = bump, pow=pow_vec[trial]) # modify the simulate.bump2 function, removing the argument: lam_star
-      true_fr[trial,]=obj$lam_s*50  
+      obj=simulate.bump2(T, lam_star = max_fr,  bump = bump, pow=pow_vec[trial])
+      # obj=simulate.bump2(T, bump = bump, pow=pow_vec[trial]) # modify the simulate.bump2 function, removing the argument: lam_star
+      true_fr[trial,]=obj$lam_s*10  
     }#P-by-T matrix, storing the true firing rate at each time point
     
     ##create arrays to store results
@@ -168,7 +170,7 @@ result <-
   }
 close(pb)
 stopCluster(cl)
-save.image("dynamic_sim_pruned.RData")
+save.image("./result/dynamic_sim_pruned.RData")
 
 
 
