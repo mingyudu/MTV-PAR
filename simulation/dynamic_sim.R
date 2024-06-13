@@ -168,7 +168,7 @@ result <-
   }
 close(pb)
 stopCluster(cl)
-save.image("dynamic_sim.RData")
+save.image("dynamic_sim_pruned.RData")
 
 
 
