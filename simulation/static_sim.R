@@ -1,18 +1,12 @@
-
-
-
-
-
-
+setwd('/home/exx/Desktop/MTV-PAR/simulation/')
 require(doSNOW)
 require(doParallel)
-#require(fields)
-#require(Kendall)
 
-cores <- parallel::detectCores()-20
+# cores <- parallel::detectCores()
+cores <- 20
 cl <- makeSOCKcluster(cores)
 registerDoSNOW(cl)
-#mydata <- matrix(rnorm(8000*500), ncol=500)
+
 pb <- txtProgressBar(min=1, max=100, style=3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress=progress)
@@ -22,120 +16,124 @@ result <-
     library(smoother)
     library(MASS)
     library(zoo)
-    source("function_l0spike.R")
-    source('simulate_sptrain.R')
+    source("/home/exx/Desktop/MTV-PAR/simulation/function_l0spike.R")
+    source('/home/exx/Desktop/MTV-PAR/simulation/simulate_sptrain.R')
+    print('static simulation pruned!')
     
     ##set simulation parameters
-    #p: number of trials
-    p = 50
-    #n_set: length of series; gam_set: gamma value
-    #sd_set: standard deviation; pois_set: poisson intensity
-    n_set=c(1000);gam_set=0.96;sd_set=0.3;pois_set = c(0.2); 
-    #lam_set" lambda values
-    #lam_set = c(0.04,0.05,0.1,0.3,1,2,3)
-    #lam_set = c(0.15,0.2,0.3,0.5,1,2)
-    #lam_set = c(0.07,0.08,0.1,0.2,0.3,0.5,1)
-    lam_set = c(0.04,0.05,0.07,0.08,0.1,0.2,0.3)
-    #lam_set = c(0.04,0.05,0.07,0.08,0.1,0.2)
+    P=50 #the number of trials
+    T=1000 #the number of time points
     
-    ##if using constant penalty, set power=0
-    power=1
+    #AR1 parameters
+    gam=0.96
+    sd=0.3
+    max_fr=0.2 #the maximum firing rate per time bin
+    bump = c(300,700) #the peaks of a firing rate function
+    lam_set = c(0.2, 0.3, 0.4, 0.5, 0.75, 1)
     
     ##create arrays to store results
-    dims = c(length(n_set), length(gam_set), length(sd_set), length(pois_set), length(lam_set))
-    # victor-purpura distance values
-    vp.rst = array(data = NA, dim = dims)
-    #firing rate 
-    fr.rst = array(data = NA, dim = dims)
-    cp.sum = array(data = NA, dim = dims)
+    # victor-purpura distance values for uniform-penalty
+    unif_vp = rep(0, length(lam_set))
+    tv_singletrial_vp = rep(0, length(lam_set))
+    tv_vp = rep(0, length(lam_set))
     
-    # rate_func <- function(x){
-    #   draw_samples(x, N=1,  kernel_fn = se_kernel, length = max(x)/10)
-    # }
+    #firing rate for uniform-penalty 
+    unif_fr2 = rep(NA, length(lam_set))
+    tv_fr2 = rep(NA, length(lam_set))
+    tv_singletrial_fr2 = rep(NA, length(lam_set))
     
+    unif_fr = array(NA, dim = c(length(lam_set),T))
+    tv_fr = array(NA, dim = c(length(lam_set),T))
+    tv_singletrial_fr = array(NA, dim = c(length(lam_set),T))
     
-    ###run simulation
-    for(q in 1:length(n_set)){
-      for(r in 1:length(gam_set)){
-        for(s in 1:length(sd_set)){
-          for(t in 1:length(pois_set)){
-            ##generate data using gaussian kernel rates
-            set.seed(B)
-            bump = c(300,700)
-            sim = simulate.BP(n_set[q],p,gam_set[r],sd_set[s],pois_set[t], bump=bump)
-            dat = sim$y
-            true_cp = sim$true_cp
-            true_ct = sim$c
-            true_st = sim$true_st
-            ##calculate true firing rate using gaussian smoothing estimate
-            n = n_set[q]
-            count0 = rep(0,n)
-            true.sum = 0
-            for(trial in 1:p){
-              temp = true_cp[[trial]]
-              true.sum = true.sum + length(temp)
-              count0[temp] = count0[temp]+1
-            }
-            true_fr = smth.gaussian(count0, window = 51,tails = TRUE)/p*50
-            
-            mean_lam = NULL
-            
-            for(u in 1:length(lam_set)){
-              #print(c(q,r,s,t,u))
-              
-              vp.set = NULL
-              cp.set = NULL
-              
-              ##do gaussian smoothing using initial estimates
-              st_gauss0 = rep(0,n)
-              for(trial in 1:p){
-                cp_init = estspike.gaussian(dat, gam = gam_set[r], lam = lam_set[u], trial = trial, power = 0,st_gauss=0)$cp
-                st_gauss0[cp_init] = st_gauss0[cp_init]+1}
-              st_gauss = smth.gaussian(st_gauss0, window = 51,tails = TRUE)
-              
-              ##scale values 
-              st_gauss = st_gauss/max(st_gauss)
-       
-              
-              for(trial in 1:p){
-                #print(trial)
-                gam = gam_set[r]
-                lam = lam_set[u]
-                
-                #estimate trace and change points
-                rst = estspike.gaussian(dat, gam = gam, lam = lam, trial = trial,  power = power, st_gauss=st_gauss)
-                est.ct = rst$ct
-                est.cp = rst$cp
-                est.st = rst$st
-                cp.set[[trial]] = est.cp
-                
-                
-                vp.set = c(vp.set, vp.dis(true_cp[[trial]], est.cp, 0.01))
-              }
-              count = rep(0,n)
-              sum1 = 0
-              for(trial in 1:p){
-                temp = cp.set[[trial]]
-                sum1 = sum1 + length(temp)
-                count[temp] = count[temp]+1
-              }
-              est_fr = smth.gaussian(count, window = 51,tails = TRUE)/p*50
-              
-              vp.rst[q,r,s,t,u] = mean(na.omit(vp.set))
-              fr.rst[q,r,s,t,u] = mean(na.omit((est_fr - true_fr)^2))
-              cp.sum[q,r,s,t,u] = sum1
-            }
-            
-          }
-        }
+    # bandwidth selected
+    win_len = rep(NA, length(lam_set))
+    
+    # run simulation
+    set.seed(B)
+    cat('seed: ', B, '\n')
+    sim = simulate.BP(T, P, gam, sd, max_fr, bump=bump)
+    dat = sim$y #p-by-matrix of calcium traces
+    true_cp = sim$true_cp #a list of P vectors, with each vector records the spike times
+    true_ct = sim$c #P-by-T matrix, storing the true traces
+    true_st = sim$true_st #P-by-T matrix, storing the true spike status at each time point
+    
+    obj=simulate.bump(T, lam_star = max_fr,  bump = bump)  
+    true_fr=obj$lam_s*10  
+    cat('seed ', B, ' simulation finished...\n')
+    
+    #three methods
+    #method 1: uniform-penalty L0 using individual trials
+    #method 2: time-varying based on firing rate individual trials
+    #method 3: time-varying based on firing rate from multiple trials
+    
+    for(i in 1:length(lam_set)){ #the ith lam value
+      #### perform method 1: use the uniform-penalty L0 algorithm to obtain an initial estimate
+      cat('seed ', B, ' lam_set ', i, '\n')
+      tmp_st=matrix(0, P, T)
+      tmp_st_tv_singletrial=matrix(0, P, T)
+      unif_est = NULL #initialize 
+      tv_singletrial_est=NULL #initialize
+      for(trial in 1:P){
+        cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'uniform initialzed\n')
+        unif_est[[trial]] = estspike.gaussian(dat, gam = gam, lam = lam_set[i], trial = trial, power = 0, st_gauss=0)
+        tmp_st[trial, unif_est[[trial]]$cp] =1 #matrix of indicators for change points
+        #### evaluate the performance of the uniform-penalty L0 algorithm
+        unif_vp[i] = unif_vp[i] + vp.dis(unif_est[[trial]]$cp, true_cp[[trial]], 0.01)
+        
+        #### conduct time-varying estimation based on current trial
+        #first estimate firing rate based on the spike train of current trial, i.e., tmp_st[trial, ]
+        win = bw.SJ(unif_est[[trial]]$cp) # bandwidth selection
+        st_gauss=smth.gaussian(tmp_st[trial,], window = 2*win, alpha = 1, tails = TRUE)*50
+        st_gauss = st_gauss/max(st_gauss)
+        tv_singletrial_est[[trial]] = estspike.gaussian(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
+        tmp_st_tv_singletrial[trial, tv_singletrial_est[[trial]]$cp]=1
+        tv_singletrial_vp[i] = tv_singletrial_vp[i] + vp.dis(tv_singletrial_est[[trial]]$cp, true_cp[[trial]], 0.01)
       }
+      
+      #empirical firing rate based on uniform-penalty
+      unif_spk = unlist(lapply(1:P, function(i){unif_est[[i]]$cp}))
+      win_len[i] = bw.SJ(unif_spk)
+      unif_fr[i,] = smth.gaussian(colMeans(tmp_st), window = 2*win_len[i], alpha = 1, tails = TRUE)*50 #here means was used because tmp_st is binary
+      #empirical firing rate based on spikes estimates using individual trials
+      tv_singletrial_fr[i,] = smth.gaussian(colMeans(tmp_st_tv_singletrial), window = 2*win_len[i], alpha = 1, tails = TRUE)*50 #here means was used because tmp_st is binary
+      
+      #compute L2 error for uniform-penalty
+      unif_fr2[i] = mean(na.omit((unif_fr[i,] - true_fr)^2))#L2 error
+      #compute L2 error for time-varying penalty based on individual trials
+      tv_singletrial_fr2[i] = mean(na.omit((tv_singletrial_fr[i,] - true_fr)^2))
+      
+      #### perform the time-varying L0 estimation 
+      
+      #### compute the time-varying penalty
+      ##scale values. Don't forget to rescale it
+      st_gauss=unif_fr[i,]/max(unif_fr[i,])
+      tmp_st_tv=matrix(0, P, T)
+      tv_est=NULL
+      for(trial in 1:P)
+      {
+        cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'tv initialzed\n')
+        tv_est[[trial]] = estspike.gaussian(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
+        tmp_st_tv[trial, tv_est[[trial]]$cp] =1 #matrix of indicators for change points
+        #### evaluate the performance of the uniform varying L0 algorithm
+        tv_vp[i] = tv_vp[i] + vp.dis(tv_est[[trial]]$cp, true_cp[[trial]], 0.01)
+      }
+      
+      #empirical firing rate based on time-varying penalty from all trials
+      tv_fr[i,] = smth.gaussian(colMeans(tmp_st_tv), window = 2*win_len[i], alpha = 1, tails = TRUE)*50 #here means was used because tmp_st is binary
+      #compute L2 error for time-varying penalty based on individual trials
+      tv_fr2[i] = mean(na.omit((tv_fr[i,] - true_fr)^2))
     }
-    ##output: vp.rst (vp distance); fr.rst(l2 norm), est_fr(estimated firing rate), true_fr(true firing rate)
-    comb.result = list(vp.rst = vp.rst[1,1,1,1,], fr.rst = fr.rst[1,1,1,1,],lam_set = lam_set,est_fr=est_fr, true_fr = true_fr)}
-#    , error=function(e){})}
+    
+    ##output: vp:vp distance, fr2:L2 distance, fr: estimated firing rate, true_cp: true spikes, est: estimated spikes
+    comb.result = list(unif_vp = unif_vp, tv_singletrial_vp = tv_singletrial_vp, tv_vp = tv_vp, 
+                       unif_fr2 = unif_fr2, tv_fr2 = tv_fr2, tv_singletrial_fr2 = tv_singletrial_fr2, 
+                       unif_fr = unif_fr, tv_singletrial_fr = tv_singletrial_fr, tv_fr = tv_fr,
+                       lam_set = lam_set, true_fr = true_fr, dat = dat, true_cp = true_cp, win_len = win_len)
+  }
 close(pb)
 stopCluster(cl)
-save.image("static_sim.RData")
+save.image("./result/static_sim_pruned.RData")
 
 
 

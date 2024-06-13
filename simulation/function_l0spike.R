@@ -260,3 +260,91 @@ estspike.gaussian <- function(dat, gam, lam, trial = trial, power = power, st_ga
 }
 
 
+
+##estimate spikes using time-varying penalty (vanilla)
+estspike.gaussian2 <- function(dat, gam, lam, trial = trial, power = power, st_gauss = st_gauss){
+  ##power: the value "a" in the penalty function
+  ##st_gauss: the input estimated firing rate
+  
+  ##initialize the change point sets
+  Y = dat[trial, ]
+  Fset = c(-lam, rep(0,length(Y)))
+  cp = list()
+  cp[[1]] = 0
+  n = length(Y)
+  # eps_s = 1
+  
+  #if(power !=0){st_gauss = st_gauss}
+  
+  pen = lam
+  pen1 = lam
+  w_t = exp(-st_gauss^power)
+  #w_t = 1/(st_gauss+1)
+  lam_t = w_t/sum(w_t)*lam*n
+  ##use time-varying penalty term 
+  if(power != 0){pen1 = lam_t[1]}
+  #pen = lam_t[1]
+  
+  for (i in 2:(n+1)){
+    Fmin = Fset[1] + Dy(Y[1:(i-1)],gam) + pen1
+    sprime = i-1
+    # eps_s = c(eps_s,(i-1))
+    #print(eps_s)
+    for (j in 1:(length(eps_s)-1)){
+      #if(power != 0){pen = lam*exp(-((st_gauss[j])^power))}
+      if(power != 0){pen = lam_t[eps_s[j]]}
+      #pen = lam_t[eps_s[j]]
+      Fset.temp = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam) + pen
+      if(Fset.temp <= Fmin) {Fmin = Fset.temp; sprime = eps_s[j];}
+    }
+    
+    ex_idx = NULL
+    for (j in 1:(length(eps_s)-1)){
+      F_tau = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam)
+      if(F_tau >= Fmin) ex_idx = c(ex_idx, j)
+    }
+    if(length(ex_idx)>0) eps_s = eps_s[-ex_idx]
+    
+    Fset[i] = Fmin
+    cp[[i]] = unique(c(cp[[sprime]], sprime-1))
+    temp=cp[[i]]
+    #print(c(i,Fmin,temp[2:length(temp)]+1))
+  }
+  
+  cpset = cp[[n+1]]
+  cpset = cpset+1
+  ##estimate calcium concentration ct
+  if(length(cpset) <= 1){
+    ct = rep(0, length(Y))
+    ct[1] = Cy(Y, gam)
+    ct[2:length(Y)] = ct[1]*(gam^seq(1,length(Y)-1))
+    cpset = NULL
+  }else{
+    cpset = cpset[2:length(cpset)]
+    ct = rep(0, length(Y))
+    ct[1] = Cy(Y[1:cpset[1]], gam)
+    ct[2:cpset[1]] = ct[1]*(gam^seq(1,cpset[1]-1))
+    for(i in 1:length(cpset)){
+      if(i == length(cpset)){
+        ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):length(Y)], gam)
+        ct[(cpset[i]+1):length(Y)] = ct[cpset[i]+1]*(gam^seq(0,length(Y)-cpset[i]-1))
+      }else{
+        ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):cpset[i+1]], gam)
+        ct[(cpset[i]+1):cpset[i+1]] = ct[cpset[i]+1]*(gam^seq(0,cpset[i+1]-cpset[i]-1))
+      }
+    }
+  }
+  
+  if(length(cpset) > 0){
+    rm_idx = NULL
+    for(i in 1:length(cpset)){
+      if((ct[cpset[i]+1]-ct[cpset[i]])<0){rm_idx = c(rm_idx,i)}
+    }
+    if(length(rm_idx)>0)
+    {cpset = cpset[-rm_idx]}
+  }
+  
+  st = ct[2:n] - gam*ct[1:(n-1)]
+  st = c(0,st)
+  return(list(cp = cpset, ct = ct, st = st,lam_t = lam_t,Fset=Fset,cpall=cp,eps_s=eps_s))
+}

@@ -163,8 +163,8 @@ simulate.BP <- function(n,p, gam, sd, lam_star, bump){
   true_fr = simulate.bump(V = n, lam_star = lam_star,  bump = bump)$lam_s
   # y: observed fluorescence trace
   # c: underlying calcium concentration
-  # true_cp: true spike locations (a vector of index)
-  # true_st: true spike locations (a binary matrix)
+  # true_cp: true spike trains (a vector of index)
+  # true_st: true spike trains (a binary matrix)
   # true_fr: true firing rate
   return(list(y = y, c = c, true_cp = cp, true_st = s,true_fr=true_fr))
 }
@@ -175,7 +175,7 @@ simulate.BP <- function(n,p, gam, sd, lam_star, bump){
 # set.seed(1234)
 # sim = simulate.BP(n = 1000, p = 50, gam = 0.96, sd = 0.3,
 #                   lam_star = 0.2, bump = c(300, 700))
-## observed fluorescence trace and the underlying spike occurrence
+## observed fluorescence trace and the underlying spike trains
 # i = 3
 # marker_times = sim$true_cp[[i]]/50
 # marker_height = -1
