@@ -224,7 +224,7 @@ simulate.bump2 <- function(V, lam_star, bump = bump, pow = pow){
     rj = runif(1)
     if(rj < lam_s[sj_set[j]]) eps_set = c(eps_set, sj_set[j])
   }
-  return(list(eps_set = eps_set, sj_set = sj_set))
+  return(list(lam_s = lam_s, eps_set = eps_set, sj_set = sj_set))
 }
 
 ####generate simulation data under dynamic firing rate
