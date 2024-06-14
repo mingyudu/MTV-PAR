@@ -24,7 +24,7 @@ result <-
     T=1000 #the number of time points
     window_length = 51;
     
-    #AR1 parametersetwd('/home/exx/Desktop/MTV-PAR/simulation/')s
+    #AR1 parameter
     gam=0.96
     sd=0.3
     max_fr=0.2 #the maximum firing rate per time bin
