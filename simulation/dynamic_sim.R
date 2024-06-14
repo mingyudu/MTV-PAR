@@ -24,7 +24,7 @@ result <-
     T=1000 #the number of time points
     window_length = 51;
     
-    #AR1 parameters
+    #AR1 parametersetwd('/home/exx/Desktop/MTV-PAR/simulation/')s
     gam=0.96
     sd=0.3
     max_fr=0.2 #the maximum firing rate per time bin
@@ -173,6 +173,159 @@ stopCluster(cl)
 save.image("./result/dynamic_sim_pruned.RData")
 
 
+setwd('/home/exx/Desktop/MTV-PAR/simulation/')
+load("./result/dynamic_sim_pruned.RData")
+lam_set = c(0.2, 0.3, 0.4, 0.5, 0.75, 1.0)
+bseed = 100
+P=50
+T=1000
+
+# vp distance
+vp1 = array(NA, dim = c(bseed, length(lam_set)))
+vp2 = array(NA, dim = c(bseed, length(lam_set)))
+vp3 = array(NA, dim = c(bseed, length(lam_set)))
+# L2-norm distance
+fr1 = array(NA, dim = c(bseed, length(lam_set)))
+fr2 = array(NA, dim = c(bseed, length(lam_set)))
+fr3 = array(NA, dim = c(bseed, length(lam_set)))
+# estimated dynamic firing rate
+frr1 = array(NA, dim = c(bseed, P, T))
+frr2 = array(NA, dim = c(bseed, P, T))
+frr3 = array(NA, dim = c(bseed, P, T))
+
+for (i in 1:bseed) {
+  vp1[i,] = result[[i]]$unif_vp
+  vp2[i,] = result[[i]]$tv_singletrial_vp
+  vp3[i,] = result[[i]]$tv_vp
+  fr1[i,] = result[[i]]$unif_fr2
+  fr2[i,] = result[[i]]$tv_singletrial_fr2
+  fr3[i,] = result[[i]]$tv_fr2
+  
+  frr1[i,,] = result[[i]]$unif_fr[5,,]
+  frr2[i,,] = result[[i]]$tv_singletrial_fr[5,,]
+  frr3[i,,] = result[[i]]$tv_fr[5,,]
+}
+
+vp1 = vp1/P
+vp2 = vp2/P
+vp3 = vp3/P
+
+colMeans(vp1)
+colMeans(vp2)
+colMeans(vp3)
+
+colMeans(fr1)
+colMeans(fr2)
+colMeans(fr3)
+
+library(ggplot2)
+library(latex2exp)
+library(gridExtra)
+
+vp.data=data.frame(
+  lambda=as.factor(c(rep(lam_set, each=bseed), rep(lam_set, each=bseed), rep(lam_set, each=bseed))),
+  VP=c(c(vp1), c(vp2), c(vp3)),
+  methods=c(rep("constant", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
+)
+plot1=ggplot(vp.data, aes(x=lambda, y=VP, fill=methods)) + geom_boxplot(width=0.3) + 
+  ggtitle("dynamic VP distance. bw")+xlab(TeX("$\\lambda$"))+ylab("VP")+
+  stat_summary(
+    fun = median,
+    geom = 'line',
+    aes(group = methods, colour = methods),
+    position = position_dodge(width = 0.3) #this has to be added
+  )
+plot1
+
+fr2.data=data.frame(
+  lambda=as.factor(c(rep(lam_set, each=bseed), rep(lam_set, each=bseed), rep(lam_set, each=bseed))),
+  MSE=c(c(fr1), c(fr2), c(fr3)),
+  methods=c(rep("constant", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
+)
+
+plot2=ggplot(fr2.data, aes(x=lambda, y=MSE, fill=methods, main="L2 Norm")) + 
+  ggtitle("dynamic L2 Norm. bw") + xlab(TeX("$\\lambda$"))+ylab("L2 Norm")+
+  geom_boxplot(width=0.3) + 
+  stat_summary(
+    fun = median,
+    geom = 'line',
+    aes(group = methods, colour = methods),
+    position = position_dodge(width = 0.3) #this has to be added
+  )
+plot2
+
+pdf("dynamic-sim-bw.pdf")
+grid.arrange(plot1, plot2, ncol=1, nrow=2)
+dev.off()
 
 
+
+library(dplyr)
+library(reshape)
+
+true_fr = result[[1]]$true_fr
+unif_fr = colMeans(frr1) # average by seed number
+tv_singletrial_fr = colMeans(frr2)
+tv_fr = colMeans(frr3)
+# calculate difference between true and estimated firing rates
+diff_unif = (true_fr - unif_fr)
+diff_tv_singletrial = (true_fr - tv_singletrial_fr)
+diff_tv = (true_fr - tv_fr)
+# create data frame for plot
+df1 = melt(diff_unif)
+df2 = melt(diff_tv_singletrial)
+df3 = melt(diff_tv)
+df1$model <- 'constant'
+df2$model <- 'TV-1'
+df3$model <- 'TV-10'
+diff <- rbind(df1, df2, df3)
+diff <- diff %>% mutate(model = factor(diff$model, 
+                                       levels = c('constant', 'TV-1', 'TV-10')))
+diff$X2 <- diff$X2/50 # divided by 50 Hz
+
+# plot the heatmap for differences
+pdf("dynamic_fr_diff.pdf")
+ggplot(diff, aes(X2,X1,fill=value)) + 
+  geom_tile() + 
+  facet_wrap(~model, nrow = 3) +
+  scale_fill_viridis_b(limits=c(-0.31, 3.6), breaks=round(seq(-0.3,3.6,by=0.4),2)) +
+  theme(legend.text = element_text(size = 7))+ # legend text font size
+  xlab('Time (second)') +
+  ylab("Trial Number") + 
+  labs(fill = "Difference")
+dev.off()
+
+# Ignore below
+library(plotly)
+# 3D plot for true firing rate
+x = (1:1000)/50
+y = 1:50
+z = true_fr
+fig1 <- plot_ly(type = 'surface', x = ~x, y = ~y, z = ~z, showscale=FALSE,
+                colors = colorRamp(c("yellow","red", "black"))) %>% 
+  plotly::layout(
+    # title = 'True firing rate',
+    scene = list(
+      xaxis = list(title = 'Time (second)', titlefont = list(size=9), tickfont = list(size=10)),
+      yaxis = list(title = 'Trial Number', titlefont = list(size=9), tickfont = list(size=10)),
+      zaxis = list(title = 'Firing rate (Spikes/second)', titlefont = list(size=9), tickfont = list(size=10)),
+      camera = list(eye = list(x = 1.25, y = 2, z = 1.25)),
+      aspectratio = list(x=1.25,y=1,z=1)
+    )
+  )
+fig1
+orca(fig1,'true_fr.pdf')
+# tried to stack but didn't work
+fig2 <- ggplot(diff, aes(X2,X1,fill=value)) + 
+  geom_tile() + 
+  facet_wrap(~model, nrow = 3) +
+  scale_fill_viridis_b(limits=c(0, 2.3), breaks=round(seq(0,2.3,by=0.2),2)) +
+  theme(legend.text = element_text(size = 7))+ # legend text font size
+  xlab('Time/sec') +
+  ylab("Trial Number") + 
+  ggtitle("Difference between the true and the estimated firing rate") + 
+  labs(fill = "Difference")
+fig2 <- ggplotly(fig2)
+fig <- subplot(fig1, fig2, nrows=2)
+# Warning messages: Can only have one: config 
 
