@@ -7,7 +7,7 @@ The code are written in the way to run in server.
 source code needed: function_l0spike.R; simulate_sptrain.R
 
 function_l0spike.R: functions needed to estimate spikes using time-varying penalty
-(main function: estspike.gaussian)
+(main function: estspike.gaussian; vanilla DP: estspike.vanilla)
 
 simulate_sptrain.R: functions needed to simulate spike trains using static/dynamic 
 firing rates in Tong et al. (2021)
