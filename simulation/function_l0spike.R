@@ -178,51 +178,45 @@ estspike.gaussian <- function(dat, gam, lam, trial = trial, power = power, st_ga
   
   ##initialize the change point sets
   Y = dat[trial, ]
-  Fset = c(-lam, rep(0,length(Y)))
+  Fset = c(-lam, rep(0,length(Y))) # F: cost function
   cp = list()
-  cp[[1]] = 0
+  cp[[1]] = 0 # selected changepoints
   n = length(Y)
-  eps_s = 1
-  
-  #if(power !=0){st_gauss = st_gauss}
+  eps_s = 1 # candidate changepoint set
   
   pen = lam
   pen1 = lam
-  w_t = exp(-st_gauss^power)
-  #w_t = 1/(st_gauss+1)
-  lam_t = w_t/sum(w_t)*lam*n
+  w_t = exp(-st_gauss^power) # calculate the weight function 
+                             # based on the estimated firing rate
+  lam_t = w_t/sum(w_t)*lam*n # update the penalty term
+                             # based on the weight function
   ##use time-varying penalty term 
   if(power != 0){pen1 = lam_t[1]}
-  #pen = lam_t[1]
   
-  for (i in 2:(n+1)){
-    Fmin = Fset[1] + Dy(Y[1:(i-1)],gam) + pen1
-    sprime = i-1
-    eps_s = c(eps_s,(i-1))
-    #print(eps_s)
-    for (j in 1:(length(eps_s)-1)){
-      #if(power != 0){pen = lam*exp(-((st_gauss[j])^power))}
+  for (i in 2:(n+1)){ # i==s+1: i = 2,3, ..., (n+1) => s = 1,2, ... , n
+    Fmin = Fset[1] + Dy(Y[1:(i-1)],gam) + pen1 # compute F(0) + D(y(1:s)) + lambda(0)
+    sprime = i-1 # set the initial s'
+    eps_s = c(eps_s,(i-1)) # update epsilon_s set
+    
+    for (j in 1:(length(eps_s)-1)){ # go over the candidate changepoints
       if(power != 0){pen = lam_t[eps_s[j]]}
-      #pen = lam_t[eps_s[j]]
       Fset.temp = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam) + pen
-      if(Fset.temp <= Fmin) {Fmin = Fset.temp; sprime = eps_s[j];}
+      if(Fset.temp <= Fmin) {Fmin = Fset.temp; sprime = eps_s[j];} # obtain s'
     }
     
     ex_idx = NULL
     for (j in 1:(length(eps_s)-1)){
-      F_tau = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam)
+      F_tau = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam) # pruned
       if(F_tau >= Fmin) ex_idx = c(ex_idx, j)
     }
     if(length(ex_idx)>0) eps_s = eps_s[-ex_idx]
     
-    Fset[i] = Fmin
-    cp[[i]] = unique(c(cp[[sprime]], sprime-1))
-    temp=cp[[i]]
-    #print(c(i,Fmin,temp[2:length(temp)]+1))
+    Fset[i] = Fmin # calculate F(s); s = 1,2, ..., n
+    cp[[i]] = unique(c(cp[[sprime]], sprime-1)) # update cp(s); s = 1,2, ..., n
   }
   
-  cpset = cp[[n+1]]
-  cpset = cpset+1
+  cpset = cp[[n+1]] # cpset: changepoints (defined at the last time step)
+  cpset = cpset+1 # spike times
   ##estimate calcium concentration ct
   if(length(cpset) <= 1){
     ct = rep(0, length(Y))
@@ -245,6 +239,7 @@ estspike.gaussian <- function(dat, gam, lam, trial = trial, power = power, st_ga
     }
   }
   
+  ## remove the spike location i where ct_{i+1} - ct_{i} < 0
   if(length(cpset) > 0){
     rm_idx = NULL
     for(i in 1:length(cpset)){
@@ -256,59 +251,43 @@ estspike.gaussian <- function(dat, gam, lam, trial = trial, power = power, st_ga
   
   st = ct[2:n] - gam*ct[1:(n-1)]
   st = c(0,st)
+  # cp: spike times
   return(list(cp = cpset, ct = ct, st = st,lam_t = lam_t,Fset=Fset,cpall=cp,eps_s=eps_s))
 }
 
 
-
-##estimate spikes using time-varying penalty (vanilla)
-estspike.gaussian2 <- function(dat, gam, lam, trial = trial, power = power, st_gauss = st_gauss){
+##estimate spikes using time-varying penalty (vanilla dynamic programming)
+estspike.vanilla <- function(dat, gam, lam, trial = trial, power = power, st_gauss = st_gauss){
   ##power: the value "a" in the penalty function
   ##st_gauss: the input estimated firing rate
   
   ##initialize the change point sets
-  Y = dat[trial, ]
-  Fset = c(-lam, rep(0,length(Y)))
+  Y = dat[trial,]
+  n = length(Y)
+  Fset = c(-lam, rep(0,length(Y))) # length = n+1
   cp = list()
   cp[[1]] = 0
-  n = length(Y)
-  # eps_s = 1
-  
-  #if(power !=0){st_gauss = st_gauss}
   
   pen = lam
   pen1 = lam
   w_t = exp(-st_gauss^power)
-  #w_t = 1/(st_gauss+1)
   lam_t = w_t/sum(w_t)*lam*n
   ##use time-varying penalty term 
   if(power != 0){pen1 = lam_t[1]}
-  #pen = lam_t[1]
   
-  for (i in 2:(n+1)){
-    Fmin = Fset[1] + Dy(Y[1:(i-1)],gam) + pen1
+  for (i in 2:(n+1)){ # i==s+1: i = 2,3, ..., (n+1) => s = 1,2, ... , n
+    Fmin = Fset[1] + Dy(Y[1:(i-1)], gam) + pen1 # D(y(1:s)) => s == i-1
     sprime = i-1
-    # eps_s = c(eps_s,(i-1))
-    #print(eps_s)
-    for (j in 1:(length(eps_s)-1)){
-      #if(power != 0){pen = lam*exp(-((st_gauss[j])^power))}
-      if(power != 0){pen = lam_t[eps_s[j]]}
-      #pen = lam_t[eps_s[j]]
-      Fset.temp = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam) + pen
-      if(Fset.temp <= Fmin) {Fmin = Fset.temp; sprime = eps_s[j];}
-    }
     
-    ex_idx = NULL
-    for (j in 1:(length(eps_s)-1)){
-      F_tau = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam)
-      if(F_tau >= Fmin) ex_idx = c(ex_idx, j)
+    if (i > 2){ # i>2 => s>1 => s = 2,3, ...
+      for (j in 2:(i-1)){ # j == tau+1 
+        if(power != 0){pen = lam_t[j]}
+        Fset.temp = Fset[j] + Dy(Y[j:(i-1)],gam) + pen
+        if(Fset.temp <= Fmin) {Fmin = Fset.temp; sprime = j;}
+      }
     }
-    if(length(ex_idx)>0) eps_s = eps_s[-ex_idx]
-    
     Fset[i] = Fmin
     cp[[i]] = unique(c(cp[[sprime]], sprime-1))
-    temp=cp[[i]]
-    #print(c(i,Fmin,temp[2:length(temp)]+1))
   }
   
   cpset = cp[[n+1]]
@@ -335,6 +314,7 @@ estspike.gaussian2 <- function(dat, gam, lam, trial = trial, power = power, st_g
     }
   }
   
+  ## remove the spike location i where ct_{i+1} - ct_{i} < 0
   if(length(cpset) > 0){
     rm_idx = NULL
     for(i in 1:length(cpset)){
@@ -346,5 +326,6 @@ estspike.gaussian2 <- function(dat, gam, lam, trial = trial, power = power, st_g
   
   st = ct[2:n] - gam*ct[1:(n-1)]
   st = c(0,st)
+  # cp: spike times
   return(list(cp = cpset, ct = ct, st = st,lam_t = lam_t,Fset=Fset,cpall=cp,eps_s=eps_s))
 }
