@@ -4,7 +4,7 @@ require(doParallel)
 
 # cores <- parallel::detectCores()
 cores <- 20
-cl <- makeSOCKcluster(cores)
+cl <- makeSOCKcluster(cores, outfile = '')
 registerDoSNOW(cl)
 
 pb <- txtProgressBar(min=1, max=100, style=3)
@@ -76,7 +76,7 @@ result <-
       tv_singletrial_est=NULL #initialize
       for(trial in 1:P){
         cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'uniform initialzed\n')
-        unif_est[[trial]] = estspike.gaussian(dat, gam = gam, lam = lam_set[i], trial = trial, power = 0, st_gauss=0)
+        unif_est[[trial]] = estspike.vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 0, st_gauss=0)
         tmp_st[trial, unif_est[[trial]]$cp] =1 #matrix of indicators for change points
         #### evaluate the performance of the uniform-penalty L0 algorithm
         unif_vp[i] = unif_vp[i] + vp.dis(unif_est[[trial]]$cp, true_cp[[trial]], 0.01)
@@ -86,7 +86,7 @@ result <-
         win = bw.SJ(unif_est[[trial]]$cp) # bandwidth selection
         st_gauss=smth.gaussian(tmp_st[trial,], window = 2*win, alpha = 1, tails = TRUE)*50
         st_gauss = st_gauss/max(st_gauss)
-        tv_singletrial_est[[trial]] = estspike.gaussian(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
+        tv_singletrial_est[[trial]] = estspike.vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
         tmp_st_tv_singletrial[trial, tv_singletrial_est[[trial]]$cp]=1
         tv_singletrial_vp[i] = tv_singletrial_vp[i] + vp.dis(tv_singletrial_est[[trial]]$cp, true_cp[[trial]], 0.01)
       }
@@ -113,7 +113,7 @@ result <-
       for(trial in 1:P)
       {
         cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'tv initialzed\n')
-        tv_est[[trial]] = estspike.gaussian(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
+        tv_est[[trial]] = estspike.vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
         tmp_st_tv[trial, tv_est[[trial]]$cp] =1 #matrix of indicators for change points
         #### evaluate the performance of the uniform varying L0 algorithm
         tv_vp[i] = tv_vp[i] + vp.dis(tv_est[[trial]]$cp, true_cp[[trial]], 0.01)
@@ -133,7 +133,7 @@ result <-
   }
 close(pb)
 stopCluster(cl)
-save.image("./result/static_sim_pruned.RData")
+save.image("./result/static_sim_vanilla.RData")
 
 
 
