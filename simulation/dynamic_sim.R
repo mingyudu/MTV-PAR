@@ -4,7 +4,7 @@ require(doParallel)
 
 # cores <- parallel::detectCores()
 cores <- 20
-cl <- makeSOCKcluster(cores, outfile="./out/dynamic_sim_pruned_output.txt")
+cl <- makeSOCKcluster(cores, outfile="")
 registerDoSNOW(cl)
 
 pb <- txtProgressBar(min=1, max=100, style=3)
