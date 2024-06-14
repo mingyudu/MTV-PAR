@@ -327,5 +327,5 @@ estspike.vanilla <- function(dat, gam, lam, trial = trial, power = power, st_gau
   st = ct[2:n] - gam*ct[1:(n-1)]
   st = c(0,st)
   # cp: spike times
-  return(list(cp = cpset, ct = ct, st = st,lam_t = lam_t,Fset=Fset,cpall=cp,eps_s=eps_s))
+  return(list(cp = cpset, ct = ct, st = st,lam_t = lam_t,Fset=Fset,cpall=cp))
 }
