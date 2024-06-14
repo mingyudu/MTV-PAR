@@ -198,7 +198,7 @@ estspike.gaussian <- function(dat, gam, lam, trial = trial, power = power, st_ga
     sprime = i-1 # set the initial s'
     eps_s = c(eps_s,(i-1)) # update epsilon_s set
     
-    for (j in 1:(length(eps_s)-1)){ # go over the candidate changepoints
+    for (j in 1:(length(eps_s)-1)){ # go over only the candidate changepoints (pruned)
       if(power != 0){pen = lam_t[eps_s[j]]}
       Fset.temp = Fset[eps_s[j]] + Dy(Y[eps_s[j]:(i-1)],gam) + pen
       if(Fset.temp <= Fmin) {Fmin = Fset.temp; sprime = eps_s[j];} # obtain s'
