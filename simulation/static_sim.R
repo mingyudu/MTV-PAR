@@ -265,6 +265,33 @@ legend("topleft", col = c(1:4), legend = c("true","constant","tv-1","tv-all"),
        lty = c(1,1,1,1), text.col=1:4, bty = 'n', cex = 0.6)
 dev.off()
 
+# check one simulation (spike train)
+## observed fluorescence trace and the underlying spike trains
+i = 3
+marker_true_cp = sim$true_cp[[i]]/50
+marker_tv_cp = tv_est[[i]]$cp/50
+marker_unif_cp = unif_est[[i]]$cp/50
+marker_tv_singletrial_cp = tv_singletrial_est[[i]]$cp/50
+
+marker_height = -1
+plot((1:1000)/50, sim$y[i,], 'l', ylim = c(-4, 7), 
+     xlab = 'Time (second)', ylab = 'Calcium Trace')
+# abline(v = c(6, 14))
+segments(x0 = marker_tv_cp, y0 = rep(marker_height, length(marker_tv_cp)),
+         x1 = marker_tv_cp, y1 = rep(marker_height + 0.5, length(marker_tv_cp)),
+         col = "blue", lwd = 0.5)
+segments(x0 = marker_tv_singletrial_cp, y0 = rep(marker_height-1, length(marker_tv_singletrial_cp)),
+         x1 = marker_tv_singletrial_cp, y1 = rep(marker_height + 0.5 -1, length(marker_tv_singletrial_cp)),
+         col = "green", lwd = 0.5)
+segments(x0 = marker_unif_cp, y0 = rep(marker_height-2, length(marker_unif_cp)),
+         x1 = marker_unif_cp, y1 = rep(marker_height + 0.5 -2, length(marker_unif_cp)),
+         col = "red", lwd = 0.5)
+segments(x0 = marker_true_cp, y0 = rep(marker_height-3, length(marker_true_cp)),
+         x1 = marker_true_cp, y1 = rep(marker_height + 0.5 -3, length(marker_true_cp)),
+         col = "black", lwd = 0.5)
+legend("topleft", col = c(1:4), legend = c("True","JW","TV-1","TV-all"), 
+       lty = c(1,1,1,1), text.col=1:4, bty = 'n', cex = 0.8)
+
 
 
 
