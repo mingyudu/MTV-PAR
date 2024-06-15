@@ -261,19 +261,22 @@ estspike.vanilla <- function(dat, gam, lam, trial = trial, power = power, st_gau
   ##power: the value "a" in the penalty function
   ##st_gauss: the input estimated firing rate
   
-  ##initialize the change point sets
+  # Initialize the change point sets
   Y = dat[trial,]
   n = length(Y)
-  Fset = c(-lam, rep(0,length(Y))) # length = n+1
-  cp = list()
+  Fset = c(-lam, rep(0, n)) # length = n+1
+  cp = vector('list', n + 1) # preallocate the list
   cp[[1]] = 0
   
   pen = lam
-  pen1 = lam
   w_t = exp(-st_gauss^power)
   lam_t = w_t/sum(w_t)*lam*n
-  ##use time-varying penalty term 
-  if(power != 0){pen1 = lam_t[1]}
+  # Use time-varying penalty term if power != 0
+  if(power != 0){
+    pen1 = lam_t[1]
+  }else{
+    pen1 = lam
+  }
   
   for (i in 2:(n+1)){ # i==s+1: i = 2,3, ..., (n+1) => s = 1,2, ... , n
     Fmin = Fset[1] + Dy(Y[1:(i-1)], gam) + pen1 # D(y(1:s)) => s == i-1
@@ -281,9 +284,11 @@ estspike.vanilla <- function(dat, gam, lam, trial = trial, power = power, st_gau
     
     if (i > 2){ # i>2 => s>1 => s = 2,3, ...
       for (j in 2:(i-1)){ # j == tau+1 
-        if(power != 0){pen = lam_t[j]}
+        if(power != 0){
+          pen = lam_t[j]
+        }
         Fset.temp = Fset[j] + Dy(Y[j:(i-1)],gam) + pen
-        if(Fset.temp <= Fmin) {Fmin = Fset.temp; sprime = j;}
+        if(Fset.temp <= Fmin){Fmin = Fset.temp; sprime = j;}
       }
     }
     Fset[i] = Fmin
@@ -292,7 +297,8 @@ estspike.vanilla <- function(dat, gam, lam, trial = trial, power = power, st_gau
   
   cpset = cp[[n+1]]
   cpset = cpset+1
-  ##estimate calcium concentration ct
+  
+  # Estimate calcium concentration ct
   if(length(cpset) <= 1){
     ct = rep(0, length(Y))
     ct[1] = Cy(Y, gam)
@@ -314,14 +320,12 @@ estspike.vanilla <- function(dat, gam, lam, trial = trial, power = power, st_gau
     }
   }
   
-  ## remove the spike location i where ct_{i+1} - ct_{i} < 0
+  ## Remove the spike location i where ct_{i+1} - ct_{i} < 0
   if(length(cpset) > 0){
-    rm_idx = NULL
-    for(i in 1:length(cpset)){
-      if((ct[cpset[i]+1]-ct[cpset[i]])<0){rm_idx = c(rm_idx,i)}
+    rm_idx <- which((ct[cpset + 1] - ct[cpset]) < 0)
+    if(length(rm_idx)>0){
+      cpset = cpset[-rm_idx]
     }
-    if(length(rm_idx)>0)
-    {cpset = cpset[-rm_idx]}
   }
   
   st = ct[2:n] - gam*ct[1:(n-1)]
