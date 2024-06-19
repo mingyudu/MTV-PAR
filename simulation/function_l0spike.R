@@ -280,7 +280,7 @@ estspike.vanilla <- function(dat, gam, lam, trial = trial, power = power, st_gau
   
   for (i in 2:(n+1)){ # i==s+1: i = 2,3, ..., (n+1) => s = 1,2, ... , n
     Fmin = Fset[1] + Dy(Y[1:(i-1)], gam) + pen1 # D(y(1:s)) => s == i-1
-    sprime = i-1
+    sprime = 1  ##### fixed 06/18/2024: set the initial s' = 1 instead of i-1
     
     if (i > 2){ # i>2 => s>1 => s = 2,3, ...
       for (j in 2:(i-1)){ # j == tau+1 

@@ -1,7 +1,7 @@
 rm(list = ls())
 i = 6 # lambda_set index
-B = 98 # random seed index
-vanilla = FALSE # vanilla or pruned DP
+B = 17 # random seed index
+vanilla = TRUE # vanilla or pruned DP
 setwd('/home/exx/Desktop/MTV-PAR/simulation/')
 
 library(smoother)
