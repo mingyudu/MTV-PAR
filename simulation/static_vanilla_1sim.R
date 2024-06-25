@@ -7,9 +7,11 @@ setwd('/home/exx/Desktop/MTV-PAR/simulation/')
 library(smoother)
 library(MASS)
 library(zoo)
+library(Rcpp)
 library(tictoc)
 source("function_l0spike.R")
 source('simulate_sptrain.R')
+sourceCpp('RcppFunctions.cpp')
 print('static simulation vanilla!')
 
 ##set simulation parameters
@@ -65,7 +67,7 @@ for(trial in 1:P){
   tic(paste0('trial', trial))
   cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'constant penalty\n')
   if(vanilla){
-    unif_est[[trial]] = estspike.vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 0, st_gauss=0)
+    unif_est[[trial]] = estspike_vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 0, st_gauss = rep(0, T))
   }else{
     unif_est[[trial]] = estspike.gaussian(dat, gam = gam, lam = lam_set[i], trial = trial, power = 0, st_gauss=0)
   }
@@ -81,7 +83,7 @@ for(trial in 1:P){
   tic(paste0('trial', trial))
   cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'TV-1\n')
   if(vanilla){
-    tv_singletrial_est[[trial]] = estspike.vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
+    tv_singletrial_est[[trial]] = estspike_vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
   }else{
     tv_singletrial_est[[trial]] = estspike.gaussian(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
   }
@@ -113,7 +115,7 @@ for(trial in 1:P){
   tic(paste0('trial', trial))
   cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'TV-all\n')
   if(vanilla){
-    tv_est[[trial]] = estspike.vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
+    tv_est[[trial]] = estspike_vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
   }else{
     tv_est[[trial]] = estspike.gaussian(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
   }
@@ -129,7 +131,7 @@ tv_fr[i,] = smth.gaussian(colMeans(tmp_st_tv), window = 2*win_len[i], alpha = 1,
 tv_fr2[i] = mean(na.omit((tv_fr[i,] - true_fr)^2))
 
 if(vanilla){
-  save.image(paste0('./result/static_vanilla_1sim_20240615_seed=', B, '.RData'))
+  save.image(paste0('./result/static_vanilla_1sim_20240625_seed=', B, '.RData'))
 }else{
   save.image(paste0('./result/static_pruned_1sim_20240615_seed=', B, '.RData'))
 }
