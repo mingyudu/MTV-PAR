@@ -1,3 +1,5 @@
+# module load R/4.2.1
+# module load gcc/8.3.0
 setwd('/home/exx/Desktop/MTV-PAR/simulation/')
 require(doSNOW)
 require(doParallel)
