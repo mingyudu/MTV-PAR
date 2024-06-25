@@ -4,24 +4,24 @@
 
 library(zoo)
 
-##calculate numerator of Cy (proposition 2 Jewell and Witten (2018))
-numer_C <- function(Y, gam){
-  rst = 0
-  for(i in 1:length(Y)){
-    rst = rst + Y[i]*(gam^(i-1))
-  }
-  return(rst)
-}
-
-##calculate Cy
-Cy<- function(Y, gam){
-  return(numer_C(Y, gam)/(1-gam^(2*length(Y)))*(1-gam^2))
-}
-
-##calculate Dy
-Dy<- function(Y,gam){
-  return(sum(Y^2)/2 - Cy(Y, gam)*numer_C(Y, gam) + (Cy(Y, gam))^2/2*(1-gam^(2*length(Y)))/(1-gam^2))
-}
+# ##calculate numerator of Cy (proposition 2 Jewell and Witten (2018))
+# numer_C <- function(Y, gam){
+#   rst = 0
+#   for(i in 1:length(Y)){
+#     rst = rst + Y[i]*(gam^(i-1))
+#   }
+#   return(rst)
+# }
+# 
+# ##calculate Cy
+# Cy<- function(Y, gam){
+#   return(numer_C(Y, gam)/(1-gam^(2*length(Y)))*(1-gam^2))
+# }
+# 
+# ##calculate Dy
+# Dy<- function(Y,gam){
+#   return(sum(Y^2)/2 - Cy(Y, gam)*numer_C(Y, gam) + (Cy(Y, gam))^2/2*(1-gam^(2*length(Y)))/(1-gam^2))
+# }
 
 #function of detecting spikes using constant penalty
 #algorithm2 in Jewell and Witten (2018)
@@ -256,80 +256,80 @@ estspike.gaussian <- function(dat, gam, lam, trial = trial, power = power, st_ga
 }
 
 
-##estimate spikes using time-varying penalty (vanilla dynamic programming)
-estspike.vanilla <- function(dat, gam, lam, trial = trial, power = power, st_gauss = st_gauss){
-  ##power: the value "a" in the penalty function
-  ##st_gauss: the input estimated firing rate
-  
-  # Initialize the change point sets
-  Y = dat[trial,]
-  n = length(Y)
-  Fset = c(-lam, rep(0, n)) # length = n+1
-  cp = vector('list', n + 1) # preallocate the list
-  cp[[1]] = 0
-  
-  pen = lam
-  w_t = exp(-st_gauss^power)
-  lam_t = w_t/sum(w_t)*lam*n
-  # Use time-varying penalty term if power != 0
-  if(power != 0){
-    pen1 = lam_t[1]
-  }else{
-    pen1 = lam
-  }
-  
-  for (i in 2:(n+1)){ # i==s+1: i = 2,3, ..., (n+1) => s = 1,2, ... , n
-    Fmin = Fset[1] + Dy(Y[1:(i-1)], gam) + pen1 # D(y(1:s)) => s == i-1
-    sprime = 1  ##### fixed 06/18/2024: set the initial s' = 1 instead of i-1
-    
-    if (i > 2){ # i>2 => s>1 => s = 2,3, ...
-      for (j in 2:(i-1)){ # j == tau+1 
-        if(power != 0){
-          pen = lam_t[j]
-        }
-        Fset.temp = Fset[j] + Dy(Y[j:(i-1)],gam) + pen
-        if(Fset.temp <= Fmin){Fmin = Fset.temp; sprime = j;}
-      }
-    }
-    Fset[i] = Fmin
-    cp[[i]] = unique(c(cp[[sprime]], sprime-1))
-  }
-  
-  cpset = cp[[n+1]]
-  cpset = cpset+1
-  
-  # Estimate calcium concentration ct
-  if(length(cpset) <= 1){
-    ct = rep(0, length(Y))
-    ct[1] = Cy(Y, gam)
-    ct[2:length(Y)] = ct[1]*(gam^seq(1,length(Y)-1))
-    cpset = NULL
-  }else{
-    cpset = cpset[2:length(cpset)]
-    ct = rep(0, length(Y))
-    ct[1] = Cy(Y[1:cpset[1]], gam)
-    ct[2:cpset[1]] = ct[1]*(gam^seq(1,cpset[1]-1))
-    for(i in 1:length(cpset)){
-      if(i == length(cpset)){
-        ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):length(Y)], gam)
-        ct[(cpset[i]+1):length(Y)] = ct[cpset[i]+1]*(gam^seq(0,length(Y)-cpset[i]-1))
-      }else{
-        ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):cpset[i+1]], gam)
-        ct[(cpset[i]+1):cpset[i+1]] = ct[cpset[i]+1]*(gam^seq(0,cpset[i+1]-cpset[i]-1))
-      }
-    }
-  }
-  
-  ## Remove the spike location i where ct_{i+1} - ct_{i} < 0
-  if(length(cpset) > 0){
-    rm_idx <- which((ct[cpset + 1] - ct[cpset]) < 0)
-    if(length(rm_idx)>0){
-      cpset = cpset[-rm_idx]
-    }
-  }
-  
-  st = ct[2:n] - gam*ct[1:(n-1)]
-  st = c(0,st)
-  # cp: spike times
-  return(list(cp = cpset, ct = ct, st = st,lam_t = lam_t,Fset=Fset,cpall=cp))
-}
+# ##estimate spikes using time-varying penalty (vanilla dynamic programming)
+# estspike.vanilla <- function(dat, gam, lam, trial = trial, power = power, st_gauss = st_gauss){
+#   ##power: the value "a" in the penalty function
+#   ##st_gauss: the input estimated firing rate
+#   
+#   # Initialize the change point sets
+#   Y = dat[trial,]
+#   n = length(Y)
+#   Fset = c(-lam, rep(0, n)) # length = n+1
+#   cp = vector('list', n + 1) # preallocate the list
+#   cp[[1]] = 0
+#   
+#   pen = lam
+#   w_t = exp(-st_gauss^power)
+#   lam_t = w_t/sum(w_t)*lam*n
+#   # Use time-varying penalty term if power != 0
+#   if(power != 0){
+#     pen1 = lam_t[1]
+#   }else{
+#     pen1 = lam
+#   }
+#   
+#   for (i in 2:(n+1)){ # i==s+1: i = 2,3, ..., (n+1) => s = 1,2, ... , n
+#     Fmin = Fset[1] + Dy(Y[1:(i-1)], gam) + pen1 # D(y(1:s)) => s == i-1
+#     sprime = 1  ##### fixed 06/18/2024: set the initial s' = 1 instead of i-1
+#     
+#     if (i > 2){ # i>2 => s>1 => s = 2,3, ...
+#       for (j in 2:(i-1)){ # j == tau+1 
+#         if(power != 0){
+#           pen = lam_t[j]
+#         }
+#         Fset.temp = Fset[j] + Dy(Y[j:(i-1)],gam) + pen
+#         if(Fset.temp <= Fmin){Fmin = Fset.temp; sprime = j;}
+#       }
+#     }
+#     Fset[i] = Fmin
+#     cp[[i]] = unique(c(cp[[sprime]], sprime-1))
+#   }
+#   
+#   cpset = cp[[n+1]]
+#   cpset = cpset+1
+#   
+#   # Estimate calcium concentration ct
+#   if(length(cpset) <= 1){
+#     ct = rep(0, length(Y))
+#     ct[1] = Cy(Y, gam)
+#     ct[2:length(Y)] = ct[1]*(gam^seq(1,length(Y)-1))
+#     cpset = NULL
+#   }else{
+#     cpset = cpset[2:length(cpset)]
+#     ct = rep(0, length(Y))
+#     ct[1] = Cy(Y[1:cpset[1]], gam)
+#     ct[2:cpset[1]] = ct[1]*(gam^seq(1,cpset[1]-1))
+#     for(i in 1:length(cpset)){
+#       if(i == length(cpset)){
+#         ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):length(Y)], gam)
+#         ct[(cpset[i]+1):length(Y)] = ct[cpset[i]+1]*(gam^seq(0,length(Y)-cpset[i]-1))
+#       }else{
+#         ct[cpset[i]+1] = Cy(Y[(cpset[i]+1):cpset[i+1]], gam)
+#         ct[(cpset[i]+1):cpset[i+1]] = ct[cpset[i]+1]*(gam^seq(0,cpset[i+1]-cpset[i]-1))
+#       }
+#     }
+#   }
+#   
+#   ## Remove the spike location i where ct_{i+1} - ct_{i} < 0
+#   if(length(cpset) > 0){
+#     rm_idx <- which((ct[cpset + 1] - ct[cpset]) < 0)
+#     if(length(rm_idx)>0){
+#       cpset = cpset[-rm_idx]
+#     }
+#   }
+#   
+#   st = ct[2:n] - gam*ct[1:(n-1)]
+#   st = c(0,st)
+#   # cp: spike times
+#   return(list(cp = cpset, ct = ct, st = st,lam_t = lam_t,Fset=Fset,cpall=cp))
+# }

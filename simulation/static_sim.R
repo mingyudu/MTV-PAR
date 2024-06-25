@@ -17,8 +17,10 @@ result <-
     library(MASS)
     library(zoo)
     library(tictoc)
+    library(Rcpp)
     source("function_l0spike.R")
     source('simulate_sptrain.R')
+    sourceCpp('RcppFunctions.cpp')
     print('static simulation vanilla!')
     
     ##set simulation parameters
@@ -78,7 +80,7 @@ result <-
       for(trial in 1:P){
         tic(paste0('trial', trial))
         cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'constant penalty\n')
-        unif_est[[trial]] = estspike.vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 0, st_gauss=0)
+        unif_est[[trial]] = estspike_vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 0, st_gauss=rep(0,T))
         toc()
         tmp_st[trial, unif_est[[trial]]$cp] =1 #matrix of indicators for change points
         #### evaluate the performance of the uniform-penalty L0 algorithm
@@ -91,7 +93,7 @@ result <-
         st_gauss = st_gauss/max(st_gauss)
         tic(paste0('trial', trial))
         cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'TV-1\n')
-        tv_singletrial_est[[trial]] = estspike.vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
+        tv_singletrial_est[[trial]] = estspike_vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
         toc()
         tmp_st_tv_singletrial[trial, tv_singletrial_est[[trial]]$cp]=1
         tv_singletrial_vp[i] = tv_singletrial_vp[i] + vp.dis(tv_singletrial_est[[trial]]$cp, true_cp[[trial]], 0.01)
@@ -120,7 +122,7 @@ result <-
       {
         tic(paste0('trial', trial))
         cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'TV-all\n')
-        tv_est[[trial]] = estspike.vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
+        tv_est[[trial]] = estspike_vanilla(dat, gam = gam, lam = lam_set[i], trial = trial, power = 1, st_gauss=st_gauss)
         toc()
         tmp_st_tv[trial, tv_est[[trial]]$cp] =1 #matrix of indicators for change points
         #### evaluate the performance of the uniform varying L0 algorithm
