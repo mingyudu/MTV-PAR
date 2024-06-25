@@ -46,7 +46,7 @@ List estspike_vanilla(NumericMatrix dat, double gam, double lam, int trial, doub
   //Rcout << Y[0] << '\n';
   //Rcout << n << '\n';
   for (int i = 2; i <= (n+1); ++i) { // i = 2, 3, ..., (n+1)
-    double Fmin = Fset[0] + Dy(Y[seq(0, i - 2)], gam) + pen1; // index of Y starts from 0!
+    double Fmin = Fset[0] + Dy(Y[seq(0, i - 2)], gam) + pen1; 
     //if (i < 10){
     //Rcout << i <<"Okay!\n";
     //}
@@ -54,9 +54,7 @@ List estspike_vanilla(NumericMatrix dat, double gam, double lam, int trial, doub
     
     if (i > 2) {
       for (int j = 2; j <= (i-1); ++j) {
-        if (power != 0) {
-          pen = lam_t[j - 1];
-        }
+        pen = (power != 0) ? lam_t[j - 1] : lam;
         double Fset_temp = Fset[j - 1] + Dy(Y[seq(j - 1, i - 2)], gam) + pen;
         if (Fset_temp <= Fmin) {
           Fmin = Fset_temp;
