@@ -143,7 +143,7 @@ result <-
   }
 close(pb)
 stopCluster(cl)
-save.image("./result/static_sim_vanilla.RData")
+save.image("./result/static_sim_vanilla_rcpp.RData")
 
 
 
