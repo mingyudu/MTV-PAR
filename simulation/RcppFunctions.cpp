@@ -88,9 +88,11 @@ List estspike_vanilla(NumericMatrix dat, double gam, double lam, int trial, doub
     }
     for (size_t i = 0; i < cpset.size(); ++i) {
       if (i == cpset.size() - 1) {
-        ct[cpset[i]] = Cy(Y[seq(cpset[i], n - 1)], gam);
-        for (int j = cpset[i]; j < n; ++j) {
-          ct[j] = ct[cpset[i]] * std::pow(gam, j - cpset[i]);
+        if (cpset[i] != n){ // ensure the last cp is not at the end of timesteps
+          ct[cpset[i]] = Cy(Y[seq(cpset[i], n - 1)], gam);
+          for (int j = cpset[i]; j < n; ++j) {
+            ct[j] = ct[cpset[i]] * std::pow(gam, j - cpset[i]);
+          }
         }
       } else {
         ct[cpset[i]] = Cy(Y[seq(cpset[i], cpset[i + 1] - 1)], gam);
