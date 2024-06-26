@@ -5,7 +5,7 @@ require(doSNOW)
 require(doParallel)
 
 # cores <- parallel::detectCores()
-cores <- 30
+cores <- 4
 cl <- makeSOCKcluster(cores, outfile = '')
 registerDoSNOW(cl)
 
@@ -13,7 +13,7 @@ pb <- txtProgressBar(min=1, max=100, style=3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress=progress)
 result <- 
-  foreach(B=1:100,.options.snow=opts) %dopar% {
+  foreach(B=c(97:100, 1:96),.options.snow=opts) %dopar% {
     #tryCatch({
     library(smoother)
     library(MASS)
