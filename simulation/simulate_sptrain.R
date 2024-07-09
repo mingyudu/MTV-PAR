@@ -212,11 +212,16 @@ simulate.BP <- function(n,p, gam, sd, lam_star, bump){
 #   return(list(y = y, c = c, true_cp = cp, true_st = s,true_fr=true_fr))
 # }
 
-
-
+### Simulate spike trains with dynamic firing rate
+# V: number of timesteps
+# lam_star: upper bound of rate intensity
+# bump: the locations where the peaks of firing rate occur
+# pow: trial-specific firing rate peak height
 simulate.bump2 <- function(V, lam_star, bump = bump, pow = pow){
   lam_s = rep(0.05, V)
-  lam_s = lam_s + 0.95*get.bump1(1:V, bump[1])*pow + 0.95*get.bump1(1:V, bump[2])*pow 
+  for (i in 1:length(bump)) {
+    lam_s = lam_s + 0.95*get.bump1(1:V, bump[i])*pow # pow: trial-specific firing rate peak height
+  }
   J = rpois(1, V*lam_star)
   sj_set = sort(c(sample.int(V, J, replace = FALSE)))
   eps_set = NULL
@@ -224,10 +229,16 @@ simulate.bump2 <- function(V, lam_star, bump = bump, pow = pow){
     rj = runif(1)
     if(rj < lam_s[sj_set[j]]) eps_set = c(eps_set, sj_set[j])
   }
-  return(list(lam_s = lam_s, eps_set = eps_set, sj_set = sj_set))
+  return(list(eps_set = eps_set, sj_set = sj_set, lam_s = lam_s))
 }
 
-####generate simulation data under dynamic firing rate
+###generate simulation data under dynamic firing rate
+# n: number of timesteps
+# p: number of trials
+# gam: decay rate
+# sd: standard deviation of the random noise
+# lam_star: upper bound of rate intensity
+# bump: the locations where the peaks of firing rate occur
 simulate.BP2 <- function(n,p, gam, sd, lam_star, bump){
   c = matrix(0,p,n)
   y = matrix(0,p,n)
@@ -235,7 +246,7 @@ simulate.BP2 <- function(n,p, gam, sd, lam_star, bump){
   eps = matrix(rnorm(p*n,0,sd),p,n)
   cp = NULL
 
-  pow_vec = exp(-(1:p-25)^2/1000)
+  pow_vec = exp(-(1:p-25)^2/1000) ### should it divide by 10???
   for(p0 in 1:p){
     pow = pow_vec[p0]
     true_cp = simulate.bump2(V = n, lam_star = lam_star,  bump = bump, pow = pow)$eps_set
@@ -248,6 +259,10 @@ simulate.BP2 <- function(n,p, gam, sd, lam_star, bump){
     }
   }
   y = c + eps
+  # y: observed fluorescence trace
+  # c: underlying calcium concentration
+  # true_cp: true spike trains (a vector of index)
+  # true_st: true spike trains (a binary matrix)
   return(list(y = y, c = c, true_cp = cp, true_st = s))
 }
 
