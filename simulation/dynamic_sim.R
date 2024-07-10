@@ -15,7 +15,7 @@ opts <- list(progress=progress)
 t1 = Sys.time()
 result <- 
   foreach(B=1:20,.options.snow=opts) %dopar% {
-    #tryCatch({
+  tryCatch({
     library(smoother)
     library(MASS)
     library(zoo)
@@ -75,7 +75,7 @@ result <-
     true_cp = sim$true_cp #a list of P vectors, with each vector records the spike times
     true_ct = sim$c #P-by-T matrix, storing the true traces
     true_st = sim$true_st #P-by-T matrix, storing the true spike status at each time point
-    cat('seed ', B, ' simulation finished...\n')
+    # cat('seed ', B, ' simulation finished...\n')
     
     #three methods
     #method 1: uniform-penalty L0 using individual trials
@@ -162,7 +162,6 @@ result <-
       #empirical firing rate based on time-varying penalty from all trials 
       for(trial in 1:P)
       {
-        cat('seed ', B, 'lam_set ', i, 'trial ', trial, 'tv smoothing\n')
         trial_index =c(1:P)[abs(1:P-trial)<5]
         tv_fr[i, trial,] = smth.gaussian(colMeans(tmp_st_tv[trial_index,]), window = 2*win_len[i, trial], alpha = 1, tails = TRUE)*50
       }
@@ -176,7 +175,8 @@ result <-
                        unif_fr2 = unif_fr2, tv_fr2 = tv_fr2, tv_singletrial_fr2 = tv_singletrial_fr2, 
                        unif_fr = unif_fr, tv_singletrial_fr = tv_singletrial_fr, tv_fr = tv_fr,
                        lam_set = lam_set, true_fr = true_fr, dat = dat, true_cp = true_cp, win_len = win_len)
-  }
+  }, error = function(e) return(paste0("The seed ", B, " caused the error: ", e)))
+}
 t2 = Sys.time()
 print(t2-t1)
 
