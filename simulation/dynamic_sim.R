@@ -1,9 +1,11 @@
-setwd('/home/exx/Desktop/MTV-PAR/simulation/')
+# module load R/4.2.1
+# module load gcc/8.3.0
+# setwd('/home/exx/Desktop/MTV-PAR/simulation/')
 require(doSNOW)
 require(doParallel)
 
 # cores <- parallel::detectCores()
-cores <- 4
+cores <- 8
 cl <- makeSOCKcluster(cores, outfile='')
 registerDoSNOW(cl)
 
@@ -12,7 +14,7 @@ progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress=progress)
 t1 = Sys.time()
 result <- 
-  foreach(B=1:10,.options.snow=opts) %dopar% {
+  foreach(B=1:20,.options.snow=opts) %dopar% {
     #tryCatch({
     library(smoother)
     library(MASS)
