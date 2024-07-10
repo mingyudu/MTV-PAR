@@ -246,7 +246,7 @@ simulate.BP2 <- function(n,p, gam, sd, lam_star, bump){
   eps = matrix(rnorm(p*n,0,sd),p,n)
   cp = NULL
 
-  pow_vec = exp(-(1:p-25)^2/1000) ### should it divide by 10???
+  pow_vec = exp(-(1:p-25)^2/1000)
   for(p0 in 1:p){
     pow = pow_vec[p0]
     true_cp = simulate.bump2(V = n, lam_star = lam_star,  bump = bump, pow = pow)$eps_set
