@@ -267,7 +267,53 @@ simulate.BP2 <- function(n,p, gam, sd, lam_star, bump){
 }
 
 
+### Simulate spike trains with a flat firing rate
+# V: number of timesteps
+# lam_star: upper bound of rate intensity
+# fr: the flat firing rate
+simulate.flat <- function(V, lam_star, fr=0.5){
+  lam_s = rep(fr, V)
+  J = rpois(1, V*lam_star)
+  sj_set = sort(c(sample.int(V, J, replace = FALSE)))
+  eps_set = NULL
+  for(j in 1:J){
+    rj = runif(1)
+    if(rj < lam_s[sj_set[j]]) eps_set = c(eps_set, sj_set[j])
+  }
+  return(list(eps_set = eps_set, sj_set = sj_set, lam_s = lam_s))
+}
 
+###generate simulation data with firing rates that are constant over time but vary across trials
+# n: number of timesteps
+# p: number of trials
+# gam: decay rate
+# sd: standard deviation of the random noise
+# lam_star: upper bound of rate intensity
+# fr_vec: a vector of flat firing rate of each trial (length = p)
+simulate.BP3 <- function(n,p, gam, sd, lam_star, fr_vec){
+  c = matrix(0,p,n)
+  y = matrix(0,p,n)
+  s = matrix(0,p,n)
+  eps = matrix(rnorm(p*n,0,sd),p,n)
+  cp = NULL
+  
+  for(p0 in 1:p){
+    true_cp = simulate.flat(V = n, lam_star = lam_star, fr = fr_vec[p0])$eps_set
+    s[p0, true_cp] = 1
+    s[p0, 1] = 0
+    cp[[p0]] = true_cp
+    for(i in 1:n){
+      if (i > 1) c[p0,i] = gam * c[p0,(i-1)] + s[p0,i]
+      else c[p0,i] = c[p0,i] + s[p0,i]
+    }
+  }
+  y = c + eps
+  # y: observed fluorescence trace
+  # c: underlying calcium concentration
+  # true_cp: true spike trains (a vector of index)
+  # true_st: true spike trains (a binary matrix)
+  return(list(y = y, c = c, true_cp = cp, true_st = s))
+}
 
 
 
