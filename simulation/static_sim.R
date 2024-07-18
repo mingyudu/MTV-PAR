@@ -1,6 +1,5 @@
 # module load R/4.2.1
 # module load gcc/8.3.0
-setwd('/home/exx/Desktop/MTV-PAR/simulation/')
 require(doSNOW)
 require(doParallel)
 
@@ -150,8 +149,7 @@ save.image("./result/static_sim_vanilla_rcpp.RData")
 
 
 ### Make plots
-setwd('/home/exx/Desktop/MTV-PAR/simulation/')
-load('result/static_sim_pruned.RData')
+load('./result/static_sim_vanilla_rcpp.RData')
 lam_set = c(0.2, 0.3, 0.4, 0.5, 0.75, 1.0)
 bseed = 100
 P=50
@@ -204,61 +202,70 @@ colMeans(win1)
 
 library(ggplot2)
 library(latex2exp)
-library(gridExtra)
+library(patchwork)
 
 vp.data=data.frame(
   lambda=as.factor(c(rep(lam_set, each=bseed), rep(lam_set, each=bseed), rep(lam_set, each=bseed))),
   VP=c(c(vp1), c(vp2), c(vp3)),
-  methods=c(rep("constant", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
+  methods=c(rep("JW", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
 )
-plot1=ggplot(vp.data, aes(x=lambda, y=VP, fill=methods)) + geom_boxplot(width=0.3) + 
-  ggtitle("VP distance")+xlab(TeX("$\\lambda$"))+ylab("VP")+
-  stat_summary(
-    fun = median,
-    geom = 'line',
-    aes(group = methods, colour = methods),
-    position = position_dodge(width = 0.3) #this has to be added
-  )
+plot1=
+  ggplot(vp.data, aes(x=lambda, y=VP, col=methods)) + 
+  geom_boxplot(width=0.4, position=position_dodge(width=0.6)) + 
+  theme_bw() +
+  ggtitle("(a)")+
+  xlab(TeX("$\\lambda$"))+ylab("VP")#+
+# stat_summary(
+#   fun = median,
+#   geom = 'line',
+#   aes(group = methods, colour = methods),
+#   position = position_dodge(width = 0.3) #this has to be added
+# )
 plot1
 
 fr2.data=data.frame(
   lambda=as.factor(c(rep(lam_set, each=bseed), rep(lam_set, each=bseed), rep(lam_set, each=bseed))),
   MSE=c(c(fr1), c(fr2), c(fr3)),
-  methods=c(rep("constant", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
+  methods=c(rep("JW", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
 )
 
-plot2=ggplot(fr2.data, aes(x=lambda, y=MSE, fill=methods, main="L2 Norm")) + 
-  ggtitle("L2 Norm") + xlab(TeX("$\\lambda$"))+ylab("L2 Norm")+
-  geom_boxplot(width=0.3) + 
-  stat_summary(
-    fun = median,
-    geom = 'line',
-    aes(group = methods, colour = methods),
-    position = position_dodge(width = 0.3) #this has to be added
-  )
+plot2=ggplot(fr2.data, aes(x=lambda, y=MSE, col=methods, main="L2 Norm")) + 
+  geom_boxplot(width=0.4, position=position_dodge(width=0.6)) + 
+  theme_bw() + 
+  ggtitle("(b)") + 
+  xlab(TeX("$\\lambda$"))+ylab("L2 Norm") #+
+# stat_summary(
+#   fun = median,
+#   geom = 'line',
+#   aes(group = methods, colour = methods),
+#   position = position_dodge(width = 0.3) #this has to be added
+# )
 plot2
 
-win.data = data.frame(
-  lambda=as.factor(c(rep(lam_set, each=bseed))),
-  win=c(c(win1)),
-  methods=c(rep("constant", bseed*length(lam_set)))
-)
-
-plot3=ggplot(win.data, aes(x=lambda, y=win, fill=methods, main="Bandwidth")) + 
-  ggtitle("Bandwidth") + xlab(TeX("$\\lambda$"))+ylab("Bandwidth")+
-  geom_boxplot(width=0.3) + 
-  stat_summary(
-    fun = median,
-    geom = 'line',
-    aes(group = methods, colour = methods),
-    position = position_dodge(width = 0.3) #this has to be added
-  ) + 
-  theme(legend.position = "none")
-plot3
-
-png("static-sim-bw.png")
-grid.arrange(plot1, plot2, plot3, ncol=1, nrow=3)
+pdf("20240718_static_sim_accuracy_fig.pdf", height = 4, width = 8)
+plot1 + plot2 + 
+  plot_layout(ncol = 2, guides = "collect") & 
+  theme(legend.position = "bottom")
+# grid.arrange(plot1, plot2, ncol=2, nrow=1)
 dev.off()
+
+# win.data = data.frame(
+#   lambda=as.factor(c(rep(lam_set, each=bseed))),
+#   win=c(c(win1)),
+#   methods=c(rep("constant", bseed*length(lam_set)))
+# )
+# 
+# plot3=ggplot(win.data, aes(x=lambda, y=win, fill=methods, main="Bandwidth")) + 
+#   ggtitle("Bandwidth") + xlab(TeX("$\\lambda$"))+ylab("Bandwidth")+
+#   geom_boxplot(width=0.3) + 
+#   stat_summary(
+#     fun = median,
+#     geom = 'line',
+#     aes(group = methods, colour = methods),
+#     position = position_dodge(width = 0.3) #this has to be added
+#   ) + 
+#   theme(legend.position = "none")
+# plot3
 
 png("bw-selection-fr8.png")
 plot(result[[1]]$true_fr, type="l", xlab="Time Point", ylab="Firing Rate")
