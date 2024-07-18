@@ -246,7 +246,6 @@ pdf("20240718_static_sim_accuracy_fig.pdf", height = 4, width = 8)
 plot1 + plot2 + 
   plot_layout(ncol = 2, guides = "collect") & 
   theme(legend.position = "bottom")
-# grid.arrange(plot1, plot2, ncol=2, nrow=1)
 dev.off()
 
 # win.data = data.frame(
