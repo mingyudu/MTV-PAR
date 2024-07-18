@@ -1,6 +1,5 @@
 # module load R/4.2.1
 # module load gcc/8.3.0
-# setwd('/home/exx/Desktop/MTV-PAR/simulation/')
 require(doSNOW)
 require(doParallel)
 
@@ -183,11 +182,10 @@ print(t2-t1)
 
 close(pb)
 stopCluster(cl)
-save.image("./result/20240709_dynamic_sim_vanilla_rcpp_10seeds.RData")
+save.image("./result/20240709_dynamic_sim_vanilla_rcpp.RData")
 
 
-setwd('/home/exx/Desktop/MTV-PAR/simulation/')
-load("./result/dynamic_sim_pruned.RData")
+load("./result/20240709_dynamic_sim_vanilla_rcpp.RData")
 lam_set = c(0.2, 0.3, 0.4, 0.5, 0.75, 1.0)
 bseed = 100
 P=50
@@ -233,45 +231,45 @@ colMeans(fr3)
 
 library(ggplot2)
 library(latex2exp)
-library(gridExtra)
+library(patchwork)
 
 vp.data=data.frame(
   lambda=as.factor(c(rep(lam_set, each=bseed), rep(lam_set, each=bseed), rep(lam_set, each=bseed))),
   VP=c(c(vp1), c(vp2), c(vp3)),
-  methods=c(rep("constant", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
+  methods=c(rep("JW", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-10", bseed*length(lam_set)))
 )
-plot1=ggplot(vp.data, aes(x=lambda, y=VP, fill=methods)) + geom_boxplot(width=0.3) + 
-  ggtitle("dynamic VP distance. bw")+xlab(TeX("$\\lambda$"))+ylab("VP")+
-  stat_summary(
-    fun = median,
-    geom = 'line',
-    aes(group = methods, colour = methods),
-    position = position_dodge(width = 0.3) #this has to be added
-  )
+plot1=
+  ggplot(vp.data, aes(x=lambda, y=VP, col=methods)) + 
+  geom_boxplot(width=0.4, position=position_dodge(width=0.6)) + 
+  theme_bw() + 
+  ggtitle("(a)")+xlab(TeX("$\\lambda$"))+ylab("VP")#+
+# stat_summary(
+#   fun = median,
+#   geom = 'line',
+#   aes(group = methods, colour = methods),
+#   position = position_dodge(width = 0.3) #this has to be added
+# )
 plot1
 
 fr2.data=data.frame(
   lambda=as.factor(c(rep(lam_set, each=bseed), rep(lam_set, each=bseed), rep(lam_set, each=bseed))),
   MSE=c(c(fr1), c(fr2), c(fr3)),
-  methods=c(rep("constant", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-all", bseed*length(lam_set)))
+  methods=c(rep("JW", bseed*length(lam_set)), rep("TV-1", bseed*length(lam_set)), rep("TV-10", bseed*length(lam_set)))
 )
 
-plot2=ggplot(fr2.data, aes(x=lambda, y=MSE, fill=methods, main="L2 Norm")) + 
-  ggtitle("dynamic L2 Norm. bw") + xlab(TeX("$\\lambda$"))+ylab("L2 Norm")+
-  geom_boxplot(width=0.3) + 
-  stat_summary(
-    fun = median,
-    geom = 'line',
-    aes(group = methods, colour = methods),
-    position = position_dodge(width = 0.3) #this has to be added
-  )
+plot2=
+  ggplot(fr2.data, aes(x=lambda, y=MSE, col=methods)) + 
+  geom_boxplot(width=0.4, position=position_dodge(width=0.6)) + 
+  theme_bw() +
+  ggtitle("(b)") + 
+  xlab(TeX("$\\lambda$"))+ylab("L2 Norm")#+
+# stat_summary(
+#   fun = median,
+#   geom = 'line',
+#   aes(group = methods, colour = methods),
+#   position = position_dodge(width = 0.3) #this has to be added
+# )
 plot2
-
-pdf("dynamic-sim-bw.pdf")
-grid.arrange(plot1, plot2, ncol=1, nrow=2)
-dev.off()
-
-
 
 library(dplyr)
 library(reshape)
@@ -288,25 +286,34 @@ diff_tv = (true_fr - tv_fr)
 df1 = melt(diff_unif)
 df2 = melt(diff_tv_singletrial)
 df3 = melt(diff_tv)
-df1$model <- 'constant'
+df1$model <- 'JW'
 df2$model <- 'TV-1'
 df3$model <- 'TV-10'
 diff <- rbind(df1, df2, df3)
 diff <- diff %>% mutate(model = factor(diff$model, 
-                                       levels = c('constant', 'TV-1', 'TV-10')))
+                                       levels = c('JW', 'TV-1', 'TV-10')))
 diff$X2 <- diff$X2/50 # divided by 50 Hz
 
 # plot the heatmap for differences
-pdf("dynamic_fr_diff.pdf")
-ggplot(diff, aes(X2,X1,fill=value)) + 
+plot3 = 
+  ggplot(diff, aes(X2,X1,fill=value)) + 
   geom_tile() + 
+  ggtitle('(c)') + 
+  theme_minimal() + 
   facet_wrap(~model, nrow = 3) +
   scale_fill_viridis_b(limits=c(-0.31, 3.6), breaks=round(seq(-0.3,3.6,by=0.4),2)) +
   theme(legend.text = element_text(size = 7))+ # legend text font size
   xlab('Time (second)') +
   ylab("Trial Number") + 
   labs(fill = "Difference")
-dev.off()
+plot3
+
+fig = (plot1 + plot2 + plot_layout(guides = 'collect', 
+                                   nrow = 2) &
+         theme(legend.position = 'bottom')) | plot3 
+
+ggsave('20240718_dynamic_sim_accuracy_fig.png', plot = fig, 
+       height = 5, width = 7, dpi = 1200)
 
 # Ignore below
 library(plotly)
