@@ -19,7 +19,7 @@ result <-
     library(zoo)
     library(tictoc)
     library(Rcpp)
-    source("function_l0spike.R")
+    # source("function_l0spike.R")
     source('simulate_sptrain.R')
     sourceCpp('RcppFunctions.cpp')
     print('static simulation vanilla!')

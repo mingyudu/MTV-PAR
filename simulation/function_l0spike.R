@@ -146,25 +146,6 @@ library(zoo)
 #   return(list(f = f, c = c, true_cp = which(s!=0)))
 # }
 
-##calculate the victor-purpura metric
-#reference: http://www-users.med.cornell.edu/~jdvicto/spkdm.html
-vp.dis <- function(s1, s2, q){
-  ##reference code in matlab: http://www-users.med.cornell.edu/~jdvicto/spkdm.html
-  n1 = length(s1)
-  n2 = length(s2)
-  if(q == 0) return(abs(n1 - n2))
-  else if(q == Inf) return(n1 + n2 - 2*length(intersect(s1, s2)))
-  
-  d_mat = matrix(0, n1+1, n2+1)
-  d_mat[,1] = as.matrix(0:n1)
-  d_mat[1,] = t(as.matrix(0:n2))
-  if(sum(s1)&sum(s2)){
-    for(i in 2:(n1+1))
-      for(j in 2:(n2+1))
-        d_mat[i,j]=min(d_mat[i-1,j]+1, d_mat[i,j-1]+1, d_mat[i-1,j-1]+q*abs(s1[i-1]-s2[j-1]));
-  }
-  return(d_mat[n1+1, n2+1])
-}
 
 ##calculate the van-rossum distance
 #reference: https://www.mitpressjournals.org/doi/pdf/10.1162/089976601300014321
