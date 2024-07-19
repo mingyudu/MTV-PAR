@@ -242,7 +242,7 @@ plot1=
   ggplot(vp.data, aes(x=lambda, y=VP, col=methods)) + 
   geom_boxplot(width=0.4, position=position_dodge(width=0.6)) + 
   theme_bw() + 
-  ggtitle("(a)")+xlab(TeX("$\\lambda$"))+ylab("VP")#+
+  ggtitle("(b)")+xlab(TeX("$\\lambda$"))+ylab("VP")#+
 # stat_summary(
 #   fun = median,
 #   geom = 'line',
@@ -261,7 +261,7 @@ plot2=
   ggplot(fr2.data, aes(x=lambda, y=MSE, col=methods)) + 
   geom_boxplot(width=0.4, position=position_dodge(width=0.6)) + 
   theme_bw() +
-  ggtitle("(b)") + 
+  ggtitle("(c)") + 
   xlab(TeX("$\\lambda$"))+ylab("L2 Norm")#+
 # stat_summary(
 #   fun = median,
@@ -298,7 +298,7 @@ diff$X2 <- diff$X2/50 # divided by 50 Hz
 plot3 = 
   ggplot(diff, aes(X2,X1,fill=value)) + 
   geom_tile() + 
-  ggtitle('(c)') + 
+  ggtitle('(d)') + 
   theme_minimal() + 
   facet_wrap(~model, nrow = 3) +
   scale_fill_viridis_b(limits=c(-0.31, 3.6), breaks=round(seq(-0.3,3.6,by=0.4),2)) +
@@ -308,12 +308,29 @@ plot3 =
   labs(fill = "Difference")
 plot3
 
-fig = (plot1 + plot2 + plot_layout(guides = 'collect', 
-                                   nrow = 2) &
-         theme(legend.position = 'bottom')) | plot3 
+# heatmap: dynamic firing rate
+library(reshape2)
+df = reshape2::melt(true_fr)
+colnames(df) = c('trial', 'time', 'fr')
+df$time = df$time/50 # convert to seconds
+plot4 = 
+  df %>% 
+  ggplot(aes(x = time, y = trial, fill = fr)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  labs(title = '(a)', x = "Time (second)", y = "Trial Number", fill = 'Firing Rate') +
+  theme_minimal()
+plot4
 
-ggsave('20240718_dynamic_sim_accuracy_fig.png', plot = fig, 
-       height = 5, width = 7, dpi = 1200)
+fig = 
+  plot4 / ((plot1 + plot2 + plot_layout(guides = 'collect', 
+                                        nrow = 2) & 
+              theme(legend.position = 'bottom')) | plot3 ) + 
+  plot_layout(heights = c(1, 3))
+fig
+
+ggsave('20240719_dynamic_sim_accuracy_fig.png', plot = fig, 
+       height = 7, width = 7, dpi = 1200)
 
 # Ignore below
 library(plotly)
