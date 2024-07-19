@@ -1,6 +1,5 @@
 
-The realdata_est.R generates results for real data in Tong et al. (2021)
-https://arxiv.org/abs/2103.03818
+The realdata_est.R generates results for real data analysis.
 
 main functions include 
 spike.ar: estimate spikes and firing rates using 1d gaussian smoothing
