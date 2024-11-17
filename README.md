@@ -18,4 +18,6 @@ We demonstrate the usefulness of our method on calcium fluorescence trace data f
 
 If you find any of the source code in this repository useful for your work, please cite:
 
-> Time-varying $\ell_0$ optimization for spike inference from multi-trial calcium recordings.
+> Shen, Tong, Mingyu Du, Kevin Johnston, Steven F. Grieco, Rachel Crary, John F. Guzowski, Gyorgy Lur et al. "Time-Varying $\ell_0$ Optimization for Spike Inference from Multi-Trial Calcium Recordings." Data Science in Science 3, no. 1 (2024): 2407770.
+
+Published online: https://www.tandfonline.com/doi/full/10.1080/26941899.2024.2407770
