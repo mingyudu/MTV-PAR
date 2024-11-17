@@ -2,7 +2,6 @@
 """
 Created on Fri Dec 20 15:26:26 2019
 
-@author: Tong
 """
 
 
